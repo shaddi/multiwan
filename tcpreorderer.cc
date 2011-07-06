@@ -29,7 +29,7 @@ TCPReorderer::configure(Vector<String> &conf, ErrorHandler *errh)
 
     CalcLatencyDelta *cld = 0;
     if (cld_element && 
-        !(cld = (CalcLatencyDelta *)(cld_element->cast("StateSource"))))
+        !(cld = (CalcLatencyDelta *)(cld_element->cast("CalcLatencyDelta"))))
 	return errh->error("CALCLATENCYDELTA must be a CalcLatencyDelta element");
     else if (cld)
 	_elem_cld = cld;
