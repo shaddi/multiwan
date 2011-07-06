@@ -8,7 +8,7 @@
 CLICK_DECLS
 
 TCPReorderer::TCPReorderer()
-    : _timer(this), _sanity_count(0), _ss(0)
+    : _timer(this), _sanity_count(0), _elem_cld(0)
 {
     for (int i = 0; i < NMAP; i++)
         _map[i] = 0;
@@ -21,17 +21,18 @@ TCPReorderer::~TCPReorderer()
 int
 TCPReorderer::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    Element *ss_element = 0;
+    Element *cld_element = 0;
     if (cp_va_kparse(conf, this, errh,
-		     "STATESOURCE", cpkM, cpElement, &ss_element,
+		     "STATESOURCE", cpkM, cpElement, &cld_element,
 		     cpEnd) < 0)
 	return -1;
 
-    StateSource *ss = 0;
-    if (ss_element && !(ss = (StateSource *)(ss_element->cast("StateSource"))))
-	return errh->error("STATESOURCE must be a StateSource element");
-    else if (ss)
-	_ss = ss;
+    CalcLatencyDelta *cld = 0;
+    if (cld_element && 
+        !(cld = (CalcLatencyDelta *)(cld_element->cast("StateSource"))))
+	return errh->error("CALCLATENCYDELTA must be a CalcLatencyDelta element");
+    else if (cld)
+	_elem_cld = cld;
 
     return 0;
 }
@@ -109,7 +110,7 @@ TCPReorderer::push(int, Packet *p)
 #ifdef CLICK_TCPREORDERER_DEBUG_OFF
 	click_chatter("------SANITY CLEAN-------");
 #endif
-	clean_map(_map, Timestamp::now(), get_max_rtt());
+	clean_map(_map, Timestamp::now(), get_max_delta());
 	_sanity_count = 0;
     }
 }
@@ -123,10 +124,11 @@ TCPReorderer::run_timer(Timer *timer)
     click_chatter("------TIME CLEAN-------");
 #endif
 
-    uint32_t max_rtt = get_max_rtt();
-    clean_map(_map, Timestamp::now(), max_rtt);
+    int max_delta = get_max_delta();
+    clean_map(_map, Timestamp::now(), max_delta);
 
-    _timer.reschedule_after_msec(max_rtt/2);
+    //max_delta is in usec, so first convert to msec
+    _timer.reschedule_after_msec((max_delta/1000)/2);
 }
 
 // void
@@ -151,10 +153,9 @@ TCPReorderer::run_timer(Timer *timer)
 // }
 
 void
-TCPReorderer::clean_map(FlowNode **map, const Timestamp now, double max_rtt)
+TCPReorderer::clean_map(FlowNode **map, const Timestamp now, int max_delta)
 {
-    uint32_t rtt = static_cast<uint32_t>(max_rtt);
-    const Timestamp pkt_timeout = now - Timestamp::make_msec(rtt);
+    const Timestamp pkt_timeout = now - Timestamp::make_usec(max_delta);
     Timestamp::seconds_type flow_timeout = now.sec() - REAP_TIMEOUT;
 
     for (int i = 0; i < NMAP; i++) {
@@ -306,15 +307,10 @@ TCPReorderer::remove_first_pkt(FlowNode *fn)
     return q;
 }
 
-uint32_t
-TCPReorderer::get_max_rtt()
+int
+TCPReorderer::get_max_delta()
 {
-    uint32_t max_rtt = static_cast<uint32_t>(_ss->get_max_rtt());
-#ifdef CLICK_TCPREORDERER_DEBUG_OFF
-    if (max_rtt < 100)
-	click_chatter("INSANELY SMALL RTT(%u)", max_rtt);
-#endif
-    return max_rtt > 100 ? max_rtt : 100;
+    return _elem_cld->get_max_delta();
 }
 
 uint32_t

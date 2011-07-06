@@ -45,6 +45,8 @@ public:
     const char *port_count() const { return PORTS_1_1; }
     const char *processing() const { return AGNOSTIC; }
   
+    enum { CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT };
+    int configure_phase() const { return CONFIGURE_PHASE; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();
@@ -52,6 +54,7 @@ public:
 
     Packet *simple_action(Packet*);
     int** get_deltas(); // Make sure to delete/free the data returned
+    int get_max_delta();
 
 private:
     int **_deltas;

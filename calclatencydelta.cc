@@ -97,5 +97,18 @@ CalcLatencyDelta::get_deltas()
     return deltas;
 }
 
+int
+CalcLatencyDelta::get_max_delta()
+{
+    int max = 0;
+    for (unsigned int i = 0; i < _max_paint; i++) {
+        for (unsigned int j = 0; j < _max_paint; j++)
+            if (_deltas[i][j] > max)
+                max = _deltas[i][j];
+    }
+
+    return max;    
+}
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(CalcLatencyDelta)

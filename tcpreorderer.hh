@@ -6,7 +6,7 @@
 #include <clicknet/tcp.h>
 #include <click/timer.hh>
 #include <click/timestamp.hh>
-#include "statesource.hh"
+#include "calclatencydelta.hh"
 CLICK_DECLS
 
 //#define CLICK_TCPREORDERER_DEBUG 
@@ -14,7 +14,7 @@ CLICK_DECLS
 /*
 =c
 
-TCPReorderer(STATESOURCE)
+TCPReorderer(CALCLATENCYDELTA)
 
 =s tcp
 
@@ -28,9 +28,9 @@ must be downstream from one.
 
 Keyword arguments:
 
-=item STATESOURCE
+=item CALCLATENCYDELTA
 
-The StateSource so it can get the max RTT.
+The CalcLatencyDelta so it can get the max latency delta .
 
  */
 
@@ -43,7 +43,7 @@ public:
     const char *port_count() const { return PORTS_1_1; }
     const char *processing() const { return PUSH; }
 
-    int configure_phase() const { return StateSource::CONFIGURE_PHASE + 1; }
+    int configure_phase() const { return CalcLatencyDelta::CONFIGURE_PHASE + 1; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();
@@ -56,7 +56,7 @@ public:
 
 private:
  
-    typedef struct FlowNode {
+    struct FlowNode {
 	uint32_t flow_num;
 	tcp_seq_t seq_num; // Next expected sequence number
 	Timestamp::seconds_type timestamp; // Last time node changed
@@ -73,14 +73,14 @@ private:
     FlowNode *_map[NMAP];
     Timer _timer;
     int _sanity_count;
-    StateSource *_ss;
+    CalcLatencyDelta *_elem_cld;
 
-    void clean_map(FlowNode **map, const Timestamp now, double max_rtt);
+    void clean_map(FlowNode **map, const Timestamp now, int max_delta);
     void add_flow_node(Packet *);
     FlowNode *get_flow_node(Packet *);
     void insert_pkt_into_flow_node(FlowNode *, Packet *);
     Packet *remove_first_pkt(FlowNode *);
-    uint32_t get_max_rtt();
+    int get_max_delta();
 
     //    static int static_set_rtt(const String&, Element*, void*, ErrorHandler*);
     static uint32_t static_get_seq_num(Packet *);
