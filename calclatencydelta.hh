@@ -6,7 +6,6 @@
 CLICK_DECLS
 
 #define CLICK_CALCLATENCYDELTA_DEBUG
-#define LATENCY_THRESH 5000000 //Max latency of a line. 5s is enough I hope.
 
 /*
   =c
