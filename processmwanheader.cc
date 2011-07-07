@@ -72,7 +72,7 @@ ProcessMWanHeader::simple_action(Packet *p)
     _bandwidths[paint] = bw;
 
     if (update_schedule(_max_paint, _bandwidths))
-        _elem_ps->set_schedule(_schedule);
+        _elem_ps->set_schedule(_max_paint, _schedule);
 
     return p;
 }
