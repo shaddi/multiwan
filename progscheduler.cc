@@ -59,7 +59,7 @@ ProgScheduler::push(int, Packet *p)
     
     _curr_port_count++;
 
-    if (_curr_port_count >= _schedule[_curr_port]) {
+    while (_curr_port_count >= _schedule[_curr_port]) {
         _curr_port = (_curr_port+1) % _total_ports;
         _curr_port_count = 0;
     }
