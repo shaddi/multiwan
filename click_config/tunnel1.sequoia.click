@@ -1,3 +1,6 @@
+//Require our package
+require(package "multiwan")
+
 //Creates a port where read/write handler calls can be made
 ControlSocket("TCP", 50001);
 ChatterSocket("TCP", 50002);
@@ -22,13 +25,14 @@ progSch[1] -> AddMWanHeader(DEFAULT_BW 100) -> IPEncap(4, 192.168.36.1, 192.168.
 
 
 //Flow that processes MWan packet headers
-calcLDelta :: CalcLatencyDelta(2,0) -> ProcessMWanHeader(progSch, 2) -> Discard;
+calcLDelta :: CalcLatencyDelta(MAX_PAINT 2, OFFSET 0) -> ProcessMWanHeader(PROGSCHEDULER progSch, MAX_PAINT 2) -> Discard;
 procHeader :: SetTimestamp -> StripIPHeader -> calcLDelta;
 
 
 //Flow for packets coming from the tunnel
 tcpReorderer :: AggregateIPFlows -> StripIPHeader ->
-              TCPReorderer(calcLDelta) -> UnstripIPHeader -> kTunOutIn;
+              TCPReorderer(CALCLATENCYDELTA calcLDelta) -> UnstripIPHeader ->
+              kTunOutIn;
 ipcTcp ::  IPClassifier(tcp, -);
 ipcTcp[0] -> tcpReorderer;
 ipcTcp[1] -> kTunOutIn;

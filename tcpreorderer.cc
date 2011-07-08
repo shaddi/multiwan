@@ -23,7 +23,7 @@ TCPReorderer::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *cld_element = 0;
     if (cp_va_kparse(conf, this, errh,
-		     "STATESOURCE", cpkM, cpElement, &cld_element,
+		     "CALCLATENCYDELTA", cpkM, cpElement, &cld_element,
 		     cpEnd) < 0)
 	return -1;
 
