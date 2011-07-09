@@ -9,6 +9,6 @@ tun :: KernelTun(tun0, DEVNAME tun0);
 AddressInfo(tunIn 192.168.30.0/24);
 kTunOutIn :: KernelTun(tunIn, DEVNAME tun_in);
 
-kTunOutIn -> MarkIPHeader -> IPPrint(TUN_IN, LENGTH true) -> IPEncap(4, 192.168.35.1, 192.168.25.1) -> tun;
+kTunOutIn -> MarkIPHeader -> IPPrint(TUN_IN, LENGTH true) -> IPEncap(253, 192.168.35.1, 192.168.25.1) -> tun;
 
 tun -> StripIPHeader -> MarkIPHeader -> IPPrint(TUN, LENGTH true) -> kTunOutIn;

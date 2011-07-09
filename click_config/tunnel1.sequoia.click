@@ -20,8 +20,8 @@ kTunOutIn :: KernelTun(tunIn, DEVNAME tun_in);
 
 //Flow for packets going into the tunnel
 progSch :: ProgScheduler;
-progSch[0] -> AddMWanHeader(DEFAULT_BW 100) -> IPEncap(4, 192.168.35.1, 192.168.25.1) -> kTunLine0;
-progSch[1] -> AddMWanHeader(DEFAULT_BW 100) -> IPEncap(4, 192.168.36.1, 192.168.26.1) -> kTunLine1;
+progSch[0] -> AddMWanHeader(DEFAULT_BW 100) -> IPEncap(253, 192.168.35.1, 192.168.25.1) -> kTunLine0;
+progSch[1] -> AddMWanHeader(DEFAULT_BW 100) -> IPEncap(253, 192.168.36.1, 192.168.26.1) -> kTunLine1;
 
 
 //Flow that processes MWan packet headers
