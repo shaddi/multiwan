@@ -72,10 +72,9 @@ ProcessMWanHeader::simple_action(Packet *p)
     click_chatter("A packet!");
 #endif
 
+    //TODO: This is wrong and a hack! Make this portable.
     int paint = PAINT_ANNO(p);
-    uint32_t bw = 0;
-    for (int i = 0; i < 4; i++)
-        bw |= (((p->data())[8+i]) << ((8-i-1)*8));
+    uint32_t bw = *((uint32_t*) (p->data()+8));
 
 #ifdef CLICK_PROCESSMWANHEADER_DEBUG
     click_chatter("It says the bandwidth is %d", bw);
@@ -104,18 +103,22 @@ bool
 ProcessMWanHeader::update_schedule(int size, uint32_t *bandwidths)
 {
 #ifdef CLICK_PROCESSMWANHEADER_DEBUG
-    click_chatter("Updateing schedule");
+    click_chatter("Updating schedule");
 #endif
     int tmp_sch[size];
 
     uint32_t max = 0;
     int max_paint = 0;
 
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; i++) {
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+	click_chatter("bandwidth[%d] = %d", i, bandwidths[i]);
+#endif
         if (max < bandwidths[i]) {
             max = bandwidths[i];
             max_paint = i;
         }
+    }
 
 #ifdef CLICK_PROCESSMWANHEADER_DEBUG
     click_chatter("Max bandwidth is %d", max);
