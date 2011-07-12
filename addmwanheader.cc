@@ -6,6 +6,7 @@ CLICK_DECLS
 
 AddMWanHeader::AddMWanHeader()
 {
+    _default_BW = 0;
 }
 
 AddMWanHeader::~AddMWanHeader()
@@ -20,13 +21,16 @@ AddMWanHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpEnd) < 0)
 	return -1;
 
+#ifdef CLICK_ADDMWANHEADER_DEBUG
+    click_chatter("ADDMWANHEADER: Default banwdith is %d", _default_BW);
+#endif
+
     return 0;
 }
 
 int
 AddMWanHeader::initialize(ErrorHandler *)
 {
-    _default_BW = 0;
     return 0;
 }
 
@@ -44,6 +48,9 @@ Packet *
 AddMWanHeader::simple_action(Packet *p)
 {
     // Timestamp + BW
+#ifdef CLICK_ADDMWANHEADER_DEBUG
+    click_chatter("ADDMWANHEADER: packet->push %d", 8+4);
+#endif
     WritablePacket *q = p->push(8+4);
     if (!q)
         return 0;
@@ -58,7 +65,17 @@ AddMWanHeader::simple_action(Packet *p)
 
     // Bandwidth
     uint32_t *p_bw = (uint32_t*) (q->data() + 8);
-    *p_bw = get_bandwidth();
+#ifdef CLICK_ADDMWANHEADER_DEBUG
+    click_chatter("ADDMWANHEADER: Before p_bw = %d", *p_bw);
+#endif
+    uint32_t bw_tmp = get_bandwidth();
+#ifdef CLICK_ADDMWANHEADER_DEBUG
+    click_chatter("ADDMWANHEADER: bw_tmp = %d", bw_tmp);
+#endif
+    *p_bw = bw_tmp;
+#ifdef CLICK_ADDMWANHEADER_DEBUG
+    click_chatter("ADDMWANHEADER: After p_bw = %d", *p_bw);
+#endif
     return q;
 }
 

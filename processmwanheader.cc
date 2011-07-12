@@ -40,6 +40,10 @@ ProcessMWanHeader::configure(Vector<String> &conf, ErrorHandler *errh)
         _schedule[i] = 1;
     }
 
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+    click_chatter("Done with configure");
+#endif
+
     return 0;
 }
 
@@ -64,15 +68,27 @@ ProcessMWanHeader::cleanup(CleanupStage)
 Packet *
 ProcessMWanHeader::simple_action(Packet *p)
 {
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+    click_chatter("A packet!");
+#endif
+
     int paint = PAINT_ANNO(p);
     uint32_t bw = 0;
     for (int i = 0; i < 4; i++)
         bw |= (((p->data())[8+i]) << ((8-i-1)*8));
 
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+    click_chatter("It says the bandwidth is %d", bw);
+#endif
+
     _bandwidths[paint] = bw;
 
-    if (update_schedule(_max_paint, _bandwidths))
+    if (update_schedule(_max_paint, _bandwidths)) {
         _elem_ps->set_schedule(_max_paint, _schedule);
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+	click_chatter("The schedule has changed!");
+#endif
+    }
 
     return p;
 }
@@ -87,9 +103,12 @@ ProcessMWanHeader::simple_action(Packet *p)
 bool
 ProcessMWanHeader::update_schedule(int size, uint32_t *bandwidths)
 {
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+    click_chatter("Updateing schedule");
+#endif
     int tmp_sch[size];
 
-    int max = 0;
+    uint32_t max = 0;
     int max_paint = 0;
 
     for (int i = 0; i < size; i++)
@@ -98,7 +117,15 @@ ProcessMWanHeader::update_schedule(int size, uint32_t *bandwidths)
             max_paint = i;
         }
 
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+    click_chatter("Max bandwidth is %d", max);
+#endif
+
     int divisor = max/MAX_SCH_VALUE;
+
+#ifdef CLICK_PROCESSMWANHEADER_DEBUG
+    click_chatter("Divisor is %d", divisor);
+#endif
 
     for (int i = 0; i < size; i++) {
         int value = bandwidths[i]/divisor;
