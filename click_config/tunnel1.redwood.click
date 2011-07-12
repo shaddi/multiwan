@@ -9,12 +9,27 @@ ChatterSocket("TCP", 50002);
 //TODO: Duplicate below two lines for the number of lines in the tunnel, as
 // well as in other places this is used.
 AddressInfo(tun0 192.168.25.0/24);
+ar0 :: ARPResponder(192.168.25.2 DE:AD:BE:EF:25:02);
+c0 :: Classifier(12/0806 20/0001, 12/0806 20/0002, -);
 tun0 :: KernelTun(tun0, DEVNAME tun0);
 tun0_out :: Queue(1024) -> tun0;
+tun0 -> c0;
+// arp requests...
+c0[0] -> ar0 -> tun0_out;
+// arp responses to linux
+c0[1] -> out;
+c0[2] -> tun0_in :: Null();
+
 
 AddressInfo(tun1 192.168.26.0/24);
+ar1 :: ARPResponder(192.168.26.2 DE:AD:BE:EF:26:02);
+c1 :: Classifier(12/0806 20/0001, 12/0806 20/0002, -);
 tun1 :: KernelTun(tun1, DEVNAME tun1);
 tun1_out :: Queue(1024) -> tun1;
+tun1 -> c1;
+c1[0] -> ar1 -> tun1_out;
+c1[1] -> out;
+c1[2] -> tun1_in :: Null();
 
 //Click interface from outside Tunnel to Tunnel
 AddressInfo(tunIn 192.168.20.0/24);
@@ -42,7 +57,6 @@ procHeader :: SetTimestamp
     -> StripIPHeader 
     -> calcLDelta;
 
-
 //Flow for packets coming from the tunnel
 tcpReorderer :: AggregateIPFlows 
     -> StripIPHeader 
@@ -50,7 +64,7 @@ tcpReorderer :: AggregateIPFlows
     -> UnstripIPHeader 
     -> out;
 
-ipcTcp ::  IPClassifier(tcp, -);
+ipcTcp :: IPClassifier(tcp, -);
 ipcTcp[0] -> tcpReorderer;
 ipcTcp[1] -> out;
 outOfTunnel :: StripIPHeader 
@@ -58,12 +72,11 @@ outOfTunnel :: StripIPHeader
     -> MarkIPHeader 
     -> ipcTcp;
 
-
 //Beginning of it all
-tun0 -> dup0 :: Tee;
+tun0_in -> dup0 :: Tee;
 dup0[0] -> outOfTunnel;
 dup0[1] -> Paint(0) -> procHeader;
-tun11 -> dup1 :: Tee;
+tun1_in -> dup1 :: Tee;
 dup1[0] -> outOfTunnel;
 dup1[1] -> Paint(1) -> procHeader;
 
