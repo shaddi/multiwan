@@ -6,7 +6,7 @@
 #include "progscheduler.hh"
 CLICK_DECLS
 
-#define CLICK_PROCESSMWANHEADER_DEBUG
+//#define CLICK_PROCESSMWANHEADER_DEBUG
 #define MAX_SCH_VALUE 10
 #define MIN_SCH_VALUE 1
 
