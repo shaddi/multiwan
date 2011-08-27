@@ -8,7 +8,7 @@ ChatterSocket("TCP", 50002);
 // Click interface from outside Tunnel to Tunnel
 AddressInfo(tunIn 192.168.30.0/24);
 host_in :: KernelTun(tunIn, DEVNAME tun_in);
-host_out :: Queue(1024) -> host_in;
+host_out :: ThreadSafeQueue -> host_in;
 
 
 // Click interfaces from Tunnel to out of Tunnel
@@ -18,21 +18,21 @@ AddressInfo(tun0 192.168.35.0/24);
 ar0 :: ARPResponder(192.168.35.2 DE:AD:BE:EF:35:02);
 c0 :: Classifier(12/0806 20/0001, 12/0806 20/0002, -);
 tun0 :: KernelTun(tun0, DEVNAME tun0);
-tun0_out :: Queue(1024) -> tun0;
+tun0_out :: ThreadSafeQueue -> Unqueue -> IPFragmenter(1500) -> tun0;
 tun0 -> c0;
 c0[0] -> ar0 -> tun0_out; // arp requests
 c0[1] -> host_out; // arp responses to linux
-c0[2] -> tun0_in :: Null(); // everything else
+c0[2] -> IPReassembler() -> tun0_in :: Null(); // everything else
 
 AddressInfo(tun1 192.168.36.0/24);
 ar1 :: ARPResponder(192.168.36.2 DE:AD:BE:EF:36:02);
 c1 :: Classifier(12/0806 20/0001, 12/0806 20/0002, -);
 tun1 :: KernelTun(tun1, DEVNAME tun1);
-tun1_out :: Queue(1024) -> tun1;
+tun1_out :: ThreadSafeQueue -> Unqueue -> IPFragmenter(1500) -> tun1;
 tun1 -> c1;
 c1[0] -> ar1 -> tun1_out;
 c1[1] -> host_out;
-c1[2] -> tun1_in :: Null();
+c1[2] -> IPReassembler() -> tun1_in :: Null();
 
 
 // Flow for packets going into the tunnel

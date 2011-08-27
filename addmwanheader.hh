@@ -5,7 +5,7 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-#define CLICK_ADDMWANHEADER_DEBUG
+//#define CLICK_ADDMWANHEADER_DEBUG
 
 /*
   =c
