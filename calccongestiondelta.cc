@@ -82,7 +82,6 @@ CalcCongestionDelta::cleanup(CleanupStage)
 Packet*
 CalcCongestionDelta::simple_action(Packet *p)
 {
-  //TODO: implement simple_action
   uint64_t new_my_timestamp = 0;
   uint64_t new_o_timestamp = 0;
 
