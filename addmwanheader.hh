@@ -29,7 +29,7 @@ CLICK_DECLS
   |          Bandwidth of this line in Bytes per second         |
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-  Keyword arguemtsn:
+  Keyword arguments:
 
   =item DEFAULT_BW
 
