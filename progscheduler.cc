@@ -53,7 +53,7 @@ ProgScheduler::push(int, Packet *p)
 
 #ifdef CLICK_PROGSWITCH_DEBUG
     click_chatter("Packet sent port %d count %d\n", _curr_port,
-                  _curr_port_count+1, );
+                  _curr_port_count+1);
 #endif
     output(_curr_port).push(p);
     
