@@ -14,7 +14,8 @@ CLICK_DECLS
 
   =s local
 
-  Load balance switch based on distribution.
+  Load balance switch based on distribution. Default is equal distribution
+  between all the output ports.
 
   =d
 
