@@ -66,11 +66,11 @@ DistroSwitch::push(int, Packet *p)
 }
 
 void
-DistroSwitch::set_distribution(int total, const uint32_t distrib[])
+DistroSwitch::set_distribution(unsigned int total, const uint32_t distrib[])
 {
     uint32_t *tmp_distrib = new uint32_t[total];
     int sum = 0;
-    for (int i = 0; i < total; i++) {
+    for (unsigned int i = 0; i < total; i++) {
         tmp_distrib[i] = distrib[i];
         sum += distrib[i];
     }

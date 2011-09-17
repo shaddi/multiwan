@@ -39,7 +39,7 @@ public:
   void cleanup(CleanupStage);
 
   void push(int, Packet *);
-  void set_distribution(int, const uint32_t[]);
+  void set_distribution(unsigned int, const uint32_t[]);
 
 private:
   uint32_t *_distrib;
