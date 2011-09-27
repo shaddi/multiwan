@@ -64,7 +64,8 @@ CalcCongestionDelta::initialize(ErrorHandler *)
 void
 CalcCongestionDelta::add_handlers()
 {
-  //TODO: add get_congestion_score handler
+    add_read_handler("get_congestion_score", static_get_congestion_score,
+                     (void *) 0);
 }
 
 void
@@ -127,6 +128,19 @@ CalcCongestionDelta::get_congestion_score()
 
   return tmp;
 }
+
+String
+CalcCongestionDelta::static_get_congestion_score(Element *e, void *)
+{
+    CalcCongestionDelta *ccd = (CalcCongestionDelta*) e;
+    unsigned short cs = ccd->get_congestion_score();
+
+    char *str = new char[20];
+    sprintf(str, "%x", cs);
+
+    return String(str);
+}
+
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(CalcCongestionDelta)

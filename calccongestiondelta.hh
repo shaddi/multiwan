@@ -72,6 +72,8 @@ private:
     uint64_t _prev_o_timestamp;
 
     unsigned int _offset;
+
+    static String static_get_congestion_score(Element*, void*);
 };
 
 CLICK_ENDDECLS
