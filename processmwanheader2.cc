@@ -113,7 +113,7 @@ ProcessMWanHeader2::update_distribution()
     uint32_t sum = 0;
     int c_not_cong = 0;
     for (unsigned int i = 0; i < _max_paint; i++) {
-        cong_scores[i] = static_ones_count(_cong_deltas[i]);
+        cong_scores[i] = static_count_ones(_cong_deltas[i]);
         sum += cong_scores[i];
         if (cong_scores[i] == 0)
             c_not_cong++;
@@ -198,7 +198,7 @@ ProcessMWanHeader2::update_distribution()
 }
 
 unsigned short
-static_ones_count(unsigned short num)
+ProcessMWanHeader2::static_count_ones(unsigned short num)
 {
     unsigned short count = 0;
     for(int i = 0; i < MAX_CONG_SCORE; i++) {

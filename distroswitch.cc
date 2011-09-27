@@ -55,12 +55,15 @@ DistroSwitch::push(int, Packet *p)
   uint32_t sum = 0;
   for (int i = 0; i < _total_ports; i++) {
     sum += _distrib[i];
-    if (num <= sum)
+    if (num <= sum) {
       port = i;
+      break;
+    }
   }
 
 #ifdef CLICK_DISTROSWITCH_DEBUG
-    click_chatter("Packet sent port %d\n", port);
+    click_chatter("[DISTROSWITCH] Num:%d Distrib_Sum:%d Packet sent port %d\n",
+                  num, _distrib_sum, port);
 #endif
     output(port).push(p);
 }
@@ -82,9 +85,9 @@ DistroSwitch::set_distribution(unsigned int total, const uint32_t distrib[])
     delete[] tmp_distrib2;
 
 #ifdef CLICK_DISTROSWITCH_DEBUG
-    click_chatter("NEW DISTRIBUTION: ");
+    click_chatter("[DISTROSWITCH] NEW DISTRIBUTION: ");
     for (int i = 0; i < _total_ports; i++)
-        click_chatter(" %d", _distrib[i]);
+        click_chatter("[DISTROSWITCH]  %d", _distrib[i]);
 #endif
 }
 
@@ -97,9 +100,9 @@ DistroSwitch::static_set_distribution(const String &data, Element *element, void
     cp_spacevec(data, conf);
 
 #ifdef CLICK_DISTROSWITCH_DEBUG
-    click_chatter("string input length %d\n", conf.size());
+    click_chatter("[DISTROSWITCH] string input length %d\n", conf.size());
     for(int i = 0; i < conf.size(); i++)
-        click_chatter("value %d '%s'\n", i, conf[i].c_str());
+        click_chatter("[DISTROSWITCH] value %d '%s'\n", i, conf[i].c_str());
 #endif
 
     int total = 0;
@@ -107,7 +110,7 @@ DistroSwitch::static_set_distribution(const String &data, Element *element, void
         return errh->error("Total port numbers in schedule is not a number");
 
 #ifdef CLICK_DISTROSWITCH_DEBUG
-    click_chatter("total = %d\n", total);
+    click_chatter("[DISTROSWITCH] total = %d\n", total);
 #endif
 
     uint32_t tmp_distrib[total];

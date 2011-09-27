@@ -89,7 +89,7 @@ private:
 
     void update_distribution();
 
-    static unsigned short static_ones_count(unsigned short num);
+    static unsigned short static_count_ones(unsigned short num);
     static bool static_ary_equals(int size, int *a, int *b);
 };
 
