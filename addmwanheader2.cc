@@ -53,9 +53,9 @@ Packet *
 AddMWanHeader2::simple_action(Packet *p)
 {
     // Timestamp + 2 bytes of congestion bools
-#ifdef CLICK_ADDMWANHEADER2_DEBUG
-    click_chatter("ADDMWANHEADER2: packet->push %d", 8+2);
-#endif
+// #ifdef CLICK_ADDMWANHEADER2_DEBUG
+//     click_chatter("[ADDMWANHEADER2] packet->push %d", 8+2);
+// #endif
     WritablePacket *q = p->push(8+2);
     if (!q)
         return 0;
@@ -66,7 +66,26 @@ AddMWanHeader2::simple_action(Packet *p)
     now_us += now.usec();
 
     uint64_t *tmp = (uint64_t*) q->data();
+    // *tmp = 0;
     *tmp = now_us;
+
+    // uint64_t mult = 1;
+    // for (int i = 0; i < 64; i++) {
+    //   mult = mult << 1;
+    //   *tmp |= ((now_us % mult) > 0 ? 1<<i : 0);
+    // }
+
+#ifdef CLICK_ADDMWANHEADER2_DEBUG
+    click_chatter("[ADDMWANHEADER2] timestamp %llu", now_us);
+    // click_chatter("[ADDMWANHEADER2] tmp %x%x %x%x %x%x %x%x", q->data()[0],
+    //               q->data()[1],
+    //               q->data()[2],
+    //               q->data()[3],
+    //               q->data()[4],
+    //               q->data()[5],
+    //               q->data()[6],
+    //               q->data()[7]);
+#endif
 
     // TODO:Congestion bits
     unsigned short *p_cb = (unsigned short*) (q->data() + 8);
