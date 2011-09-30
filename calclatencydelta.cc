@@ -63,9 +63,11 @@ CalcLatencyDelta::simple_action(Packet *p)
 {
     // _deltas[i][j] = latency_i - latency_j
     int paint = PAINT_ANNO(p);
-    uint64_t src_timestamp = 0;
-    for (int i = 0; i < 8; i++)
-        src_timestamp |= (((p->data())[_offset+i]) << ((8-i-1)*8));
+    // TODO: This is a hack, not cross-platform, fix in the future.
+    uint64_t src_timestamp = *((uint64_t*) p->data());
+    // uint64_t src_timestamp = 0;
+    // for (int i = 0; i < 8; i++)
+    //     src_timestamp |= (((p->data())[_offset+i]) << ((8-i-1)*8));
     
     uint64_t dst_timestamp = p->timestamp_anno().sec() * ((uint64_t) 1000000);
     dst_timestamp += p->timestamp_anno().usec();
@@ -75,6 +77,7 @@ CalcLatencyDelta::simple_action(Packet *p)
 
     for (unsigned int i = 0; i < _max_paint; i++) {
         if (_last_latency[i] != 0) {
+            //TODO: Now just replace latency delta, in future rolling change? 
             _deltas[paint][i] = latency - _last_latency[i];
             _deltas[i][paint] = _last_latency[i] - latency;
         }

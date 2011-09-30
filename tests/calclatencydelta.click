@@ -15,6 +15,7 @@ rs1 :: InfiniteSource(ACTIVE false, LIMIT 1);
 rs2 :: InfiniteSource(ACTIVE false, LIMIT 1);
 
 rs1 -> SetTimestamp -> ah1 -> ccd1 -> Print(line1A, TIMESTAMP true) -> Queue -> DelayUnqueue(.1) -> Paint(0) -> SetTimestamp -> Print(line1B, TIMESTAMP true) -> cld;
+
 rs2 -> SetTimestamp -> ah2 -> ccd2 -> Print(line2A, TIMESTAMP true) -> Queue -> DelayUnqueue(.15) -> Paint(1) -> SetTimestamp -> Print(line2B, TIMESTAMP true) -> cld;
 
 s :: Script(
@@ -29,11 +30,12 @@ s :: Script(
      write rs1.reset,
      write rs2.reset,
      set c $(add $(c) 1),
-     print $(div $(cld.get_max_delta) 1000000),
+     //print $(div $(cld.get_max_delta) 1000000),
      set sum $(add $(sum) $(cld.get_max_delta)),
      goto loop_beg $(lt $(c) 20),
-     print $(div $(div $(sum) 1000000) 20),
-     print "Pass test: " $(eq $(div $(div $(sum) 1000000) 20) 50),
+     set avg $(div $(div $(sum) 1000000) 20),
+     print "Average max delta: " $(avg),
+     print "Pass test: " $(and $(ge $(avg) 0.049) $(le $(avg) 0.051)),
 
      stop
      );
