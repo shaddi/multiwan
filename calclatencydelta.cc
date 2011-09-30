@@ -45,6 +45,7 @@ CalcLatencyDelta::initialize(ErrorHandler *)
 void
 CalcLatencyDelta::add_handlers()
 {
+    add_read_handler("get_max_delta", static_get_max_delta, (void *) 0);
 }
 
 void
@@ -108,6 +109,12 @@ CalcLatencyDelta::get_max_delta()
     }
 
     return max;    
+}
+
+String
+CalcLatencyDelta::static_get_max_delta(Element *e, void*)
+{
+    return String(((CalcLatencyDelta*)e)->get_max_delta());
 }
 
 CLICK_ENDDECLS

@@ -61,6 +61,8 @@ private:
 
     unsigned int _max_paint;
     unsigned int _offset;
+
+    static String static_get_max_delta(Element*, void*);
 };
 
 CLICK_ENDDECLS
