@@ -8,8 +8,6 @@ require(package "multiwan")
 ccd :: CalcCongestionDelta(OFFSET 0);
 ah :: AddMWanHeader2(CALC_CONGESTION_DELTA ccd);
 
-
-
 rs :: InfiniteSource(ACTIVE false, LIMIT 1);
 rs -> SetTimestamp -> ah -> SetTimestamp -> ccd -> Discard;
 //rs -> SetTimestamp -> ah -> Queue -> duq :: DelayUnqueue(1);
