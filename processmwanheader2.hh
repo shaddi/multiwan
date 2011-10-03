@@ -7,7 +7,7 @@
 #include "distroswitch.hh"
 CLICK_DECLS
 
-#define CLICK_PROCESSMWANHEADER2_DEBUG
+//#define CLICK_PROCESSMWANHEADER2_DEBUG
 
 /*
   =c
@@ -88,6 +88,8 @@ private:
     uint32_t _distrib_min;
 
     void update_distribution();
+
+    uint32_t get_distrib_shift(int);
 
     static unsigned short static_count_ones(unsigned short num);
     static bool static_ary_equals(int size, int *a, int *b);

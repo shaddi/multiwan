@@ -200,7 +200,7 @@ CalcCongestionDelta::static_get_congestion_score(Element *e, void *)
     // return String(binary);
 
     char str[20];
-    sprintf(str, "%x\n", cs);
+    sprintf(str, "%x", cs);
 
     return String(str);
 }

@@ -76,7 +76,7 @@ Packet *
 ProcessMWanHeader2::simple_action(Packet *p)
 {
 #ifdef CLICK_PROCESSMWANHEADER2_DEBUG
-    click_chatter("A packet!");
+    //    click_chatter("A packet!");
 #endif
 
     int paint = PAINT_ANNO(p);
@@ -97,6 +97,16 @@ ProcessMWanHeader2::run_timer(Timer *timer)
     assert(timer == &_timer);
 
     update_distribution();
+
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+    bool badness = false;
+    for (unsigned int i = 0; i < _max_paint; i++)
+        if (_distrib[i] < _distrib_min)
+            badness = true;
+    if (badness)
+        click_chatter("[PROCESSMWANHEADER2] Some of distribution is < min!");
+#endif
+
     _elem_ds->set_distribution(_max_paint, _distrib);
 
     _timer.reschedule_after_msec(_update_int);
@@ -106,7 +116,7 @@ void
 ProcessMWanHeader2::update_distribution()
 {
 #ifdef CLICK_PROCESSMWANHEADER2_DEBUG
-    click_chatter("PROCESSMWANHEADER2: Updating distribution");
+    click_chatter("[PROCESSMWANHEADER2] Updating distribution");
 #endif
 
     unsigned short *cong_scores = new unsigned short[_max_paint];
@@ -141,7 +151,7 @@ ProcessMWanHeader2::update_distribution()
         for (int i = 0; i < c_above; i++) {
             uint32_t r = click_random(1, sum);
             uint32_t sum2 = 0;
-            int add_to = 0;
+            int add_to = -1;
             for (int j = 0; j < c_below; j++) {
                 sum2 += MAX_CONG_SCORE - cong_scores[below_avg[j]];
                 if (r <= sum2) {
@@ -152,10 +162,7 @@ ProcessMWanHeader2::update_distribution()
 
             int curr_index = above_avg[i];
 
-            uint32_t distrib_shift =
-                (_distrib_min > (_distrib[curr_index]-_distrib_inc)) ?
-                _distrib_min - (_distrib[curr_index]-_distrib_inc) :
-                _distrib_inc;
+            uint32_t distrib_shift = get_distrib_shift(curr_index);
 
             _distrib[add_to] += distrib_shift;
             _distrib[curr_index] -= distrib_shift;
@@ -185,16 +192,29 @@ ProcessMWanHeader2::update_distribution()
 
             int curr_index = non_zero_score[i];
 
-            uint32_t distrib_shift =
-                (_distrib_min > (_distrib[curr_index]-_distrib_inc)) ?
-                _distrib_min - (_distrib[curr_index]-_distrib_inc) :
-                _distrib_inc;
+            uint32_t distrib_shift = get_distrib_shift(curr_index);
 
             _distrib[add_to] += distrib_shift;
             _distrib[curr_index] -= distrib_shift;
 
         }
     }
+}
+
+uint32_t
+ProcessMWanHeader2::get_distrib_shift(int curr_index)
+{
+    uint32_t shift = 0;
+    uint32_t distrib = _distrib[curr_index];
+
+    if (distrib == _distrib_min)
+        shift = 0;
+    else if (distrib < (_distrib_min + _distrib_inc))
+        shift = distrib - _distrib_min;
+    else
+        shift = _distrib_inc;
+
+    return shift;
 }
 
 unsigned short

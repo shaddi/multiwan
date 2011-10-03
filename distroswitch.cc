@@ -50,7 +50,7 @@ DistroSwitch::cleanup(CleanupStage)
 void
 DistroSwitch::push(int, Packet *p)
 {
-  int port = 0;
+  int port = -1;
   uint32_t num = click_random(1,_distrib_sum);
   uint32_t sum = 0;
   for (int i = 0; i < _total_ports; i++) {
@@ -62,8 +62,8 @@ DistroSwitch::push(int, Packet *p)
   }
 
 #ifdef CLICK_DISTROSWITCH_DEBUG
-    click_chatter("[DISTROSWITCH] Num:%d Distrib_Sum:%d Packet sent port %d\n",
-                  num, _distrib_sum, port);
+    // click_chatter("[DISTROSWITCH] Num:%d Distrib_Sum:%d Packet sent port %d\n",
+    //               num, _distrib_sum, port);
 #endif
     output(port).push(p);
 }

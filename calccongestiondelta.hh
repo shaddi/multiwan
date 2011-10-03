@@ -5,7 +5,7 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-#define CLICK_CALCCONGESTIONDELTA_DEBUG
+//#define CLICK_CALCCONGESTIONDELTA_DEBUG
 
 /*
   =c
