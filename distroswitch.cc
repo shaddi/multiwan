@@ -9,6 +9,7 @@ CLICK_DECLS
  */
 
 DistroSwitch::DistroSwitch()
+    : _distrub(0), _total_ports(0), _distrib_sum(0)
 {
 }
 
