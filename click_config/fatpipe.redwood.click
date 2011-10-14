@@ -7,5 +7,5 @@ AddressInfo(side_a 192.168.200.0/24, side_b 192.168.100.0/24);
 AddressInfo(tun0 192.168.20.0/24);
 
 tun :: KernelTun(tun0);
-dev :: EtherEncap(0x0800, mac_a, mac_b) -> ToDevice(eth1);
+dev :: Queue -> EtherEncap(0x0800, mac_a, mac_b) -> ToDevice(eth1);
 tun -> dev

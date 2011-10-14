@@ -7,5 +7,5 @@ AddressInfo(side_a 192.168.200.0/24, side_b 192.168.100.0/24);
 AddressInfo(tun0 192.168.30.0/24); // sequoia specific
 
 tun :: KernelTun(tun0);
-dev :: EtherEncap(0x0800, mac_b, mac_a) -> ToDevice(eth1);
+dev :: Queue -> EtherEncap(0x0800, mac_b, mac_a) -> ToDevice(eth1);
 tun -> dev
