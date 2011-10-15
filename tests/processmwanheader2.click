@@ -1,5 +1,11 @@
 require(package "multiwan")
 
+// What this does:
+// The line ProcessMWanHeader is listening to is slowly made more and more congested
+// and then decreased to no congestion. It in turn will bump both of the flows to
+// go out of FlowAgeSplitter's port 1 instead of port 0.
+// All random unexplained stuff is to make things work and not complain.
+
 //Creates a port where read/write handler calls can be made
 //ControlSocket("UNIX", /tmp/clickconstrolsocket);
 
