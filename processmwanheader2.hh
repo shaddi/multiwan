@@ -5,14 +5,16 @@
 #include <click/glue.hh>
 #include <click/timer.hh>
 #include "distroswitch.hh"
+#include "flowagesplitter.hh"
 CLICK_DECLS
 
-//#define CLICK_PROCESSMWANHEADER2_DEBUG
+#define CLICK_PROCESSMWANHEADER2_DEBUG
 
 /*
   =c
 
-  ProcessMWanHeader2(DISTROSWITCH, PAINT_MAX, UPDATE_INT, DISTRIB_TOTAL, DISTRIB_INC, DISTRIB_MIN)
+  ProcessMWanHeader2(DISTROSWITCH, PAINT_MAX, UPDATE_INT, DISTRIB_TOTAL,
+  DISTRIB_INC, DISTRIB_MIN, FLOWAGESPLITTER, FLOWSPLIT_NUM)
 
   =s local
 
@@ -53,9 +55,28 @@ CLICK_DECLS
   =item DISTRIB_MIN
 
   The minimum distribution given to a line.
+
+  =item FLOWAGESPLITTER
+
+  Optional: If this passed in whenever things seem congested, FlowAgeSplitter is
+  called to move some flows to another line class.
+
+  =item FLOWSPLIT_NUM
+
+  Optional: If this passed in whenever things seem congested, FlowAgeSplitter is
+  called to move this many flows to another line class (Default is 1)
+
+  =item FLOWSPLIT_THRESHOLD
+
+  Optional: If this passed in whenever the average congested score is above this
+  threshold inclusive (range: 0-16, 0 no congestion) FlowAgeSplitter will be
+  called to move FLOWSPLIT_NUM flows to another line class. (Default is 4)
+
  */
 
 #define MAX_CONG_SCORE 16
+#define FLOWSPLIT_NUM 1
+#define FLOWSPLIT_THRESHOLD 4
 
 class ProcessMWanHeader2 : public Element {
 public:
@@ -77,17 +98,23 @@ public:
 
 private:
     DistroSwitch *_elem_ds;
+    FlowAgeSplitter *_elem_fas;
     Timer _timer;
 
     unsigned int _max_paint;
     uint32_t _update_int;
     unsigned short *_cong_deltas;
+    unsigned short *_cong_scores;
     uint32_t *_distrib;
     uint32_t _distrib_total;
     uint32_t _distrib_inc;
     uint32_t _distrib_min;
+    unsigned int _flowsplit_num;
+    unsigned short _flowsplit_threshold;
 
-    void update_distribution();
+    void update_cong_scores();
+    void update_distribution(); // update_cong_scores() needs to be called first.
+    void bump_flows_if_need(); // update_cong_scores() needs to be called first.
 
     uint32_t get_distrib_shift(int);
 

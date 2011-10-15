@@ -7,8 +7,10 @@
 CLICK_DECLS
 
 ProcessMWanHeader2::ProcessMWanHeader2()
-    : _elem_ds(0), _timer(this), _max_paint(0), _update_int(0), _cong_deltas(0),
-      _distrib(0), _distrib_total(100), _distrib_inc(5), _distrib_min(5)
+    : _elem_ds(0), _elem_fas(0), _timer(this), _max_paint(0), _update_int(0),
+      _cong_deltas(0), _cong_scores(0), _distrib(0), _distrib_total(100),
+      _distrib_inc(5), _distrib_min(5), _flowsplit_num(FLOWSPLIT_NUM),
+      _flowsplit_threshold(FLOWSPLIT_THRESHOLD)
 {
 }
 
@@ -20,6 +22,9 @@ int
 ProcessMWanHeader2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *ds_element = 0;
+    Element *fas_element = 0;
+    unsigned int tmp = 0;
+    unsigned short tmp2 = 0;
     if (cp_va_kparse(conf, this, errh,
 		     "DISTROSWITCH", cpkM, cpElement, &ds_element,
 		     "MAX_PAINT", cpkM, cpUnsigned, &_max_paint,
@@ -27,6 +32,9 @@ ProcessMWanHeader2::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "DISTRIB_TOTAL", cpkM, cpUnsigned, &_distrib_total,
 		     "DISTRIB_INC", cpkM, cpUnsigned, &_distrib_inc,
 		     "DISTRIB_MIN", cpkM, cpUnsigned, &_distrib_min,
+		     "FLOWAGESPLITTER", cpkN, cpElement, &fas_element,
+		     "FLOWSPLIT_NUM", cpkN, cpUnsigned, &tmp,
+		     "FLOWSPLIT_THRESHOLD", cpkN, cpUnsigned, &tmp2,
 		     cpEnd) < 0)
 	return -1;
 
@@ -37,11 +45,27 @@ ProcessMWanHeader2::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (ds)
 	_elem_ds = ds;
 
+    FlowAgeSplitter *fas = 0;
+    if (fas_element && 
+        !(fas = (FlowAgeSplitter *)(fas_element->cast("FlowAgeSplitter"))))
+	return errh->error("FLOWAGESPLITTER must be a FlowAgeSplitter element");
+    else if (fas)
+	_elem_fas = fas;
+    else
+        _elem_fas = 0;
+
+    if (tmp > 0)
+        _flowsplit_num = tmp;
+    if (tmp2 > 0)
+        _flowsplit_threshold = tmp2;
+
     _cong_deltas = new unsigned short[_max_paint];
+    _cong_scores = new unsigned short[_max_paint];
     _distrib = new uint32_t[_max_paint];
 
     for (unsigned int i = 0; i < _max_paint; i++) {
         _cong_deltas[i] = 0;
+        _cong_scores[i] = 0;
         _distrib[i] = _distrib_total/_max_paint;
     }
 
@@ -69,6 +93,7 @@ void
 ProcessMWanHeader2::cleanup(CleanupStage)
 {
     delete _cong_deltas;
+    delete _cong_scores;
     delete _distrib;
 }
 
@@ -83,7 +108,7 @@ ProcessMWanHeader2::simple_action(Packet *p)
     unsigned short cong_delta = *((unsigned short*) (p->data()+8));
 
 #ifdef CLICK_PROCESSMWANHEADER2_DEBUG
-    click_chatter("It says the congestion delta is %x for line %d", cong_delta, paint);
+    //    click_chatter("It says the congestion delta is %x for line %d", cong_delta, paint);
 #endif
 
     _cong_deltas[paint] = cong_delta;
@@ -95,6 +120,8 @@ void
 ProcessMWanHeader2::run_timer(Timer *timer)
 {
     assert(timer == &_timer);
+
+    update_cong_scores();
 
     update_distribution();
 
@@ -109,27 +136,41 @@ ProcessMWanHeader2::run_timer(Timer *timer)
 
     _elem_ds->set_distribution(_max_paint, _distrib);
 
+    if (_elem_fas)
+        bump_flows_if_need();
+
     _timer.reschedule_after_msec(_update_int);
 }
 
 void
+ProcessMWanHeader2::update_cong_scores()
+{
+    unsigned short *cong_scores = new unsigned short[_max_paint];
+    for (unsigned int i = 0; i < _max_paint; i++)
+        cong_scores[i] = static_count_ones(_cong_deltas[i]);
+
+    unsigned short *tmp = _cong_scores;
+    _cong_scores = cong_scores;
+    delete tmp;
+}
+
+// update_cong_scores() needs to be called first.
+void
 ProcessMWanHeader2::update_distribution()
 {
 #ifdef CLICK_PROCESSMWANHEADER2_DEBUG
-    click_chatter("[PROCESSMWANHEADER2] Updating distribution");
+    //    click_chatter("[PROCESSMWANHEADER2] Updating distribution");
 #endif
 
-    unsigned short *cong_scores = new unsigned short[_max_paint];
     uint32_t sum = 0;
     int c_not_cong = 0;
     for (unsigned int i = 0; i < _max_paint; i++) {
-        cong_scores[i] = static_count_ones(_cong_deltas[i]);
-        sum += cong_scores[i];
-        if (cong_scores[i] == 0)
+        sum += _cong_scores[i];
+        if (_cong_scores[i] == 0)
             c_not_cong++;
     }
     uint32_t avg = sum/_max_paint;
-
+ 
     if (c_not_cong == 0) {
         unsigned int *above_avg = new unsigned int[_max_paint];
         unsigned int *below_avg = new unsigned int[_max_paint];
@@ -138,13 +179,13 @@ ProcessMWanHeader2::update_distribution()
         uint32_t sum = 0;
 
         for (unsigned int i = 0; i < _max_paint; i++) {
-            if (cong_scores[i] > avg) {
+            if (_cong_scores[i] > avg) {
                 above_avg[c_above] = i;
                 c_above++;
             } else {
                 below_avg[c_below] = i;
                 c_below++;
-                sum += MAX_CONG_SCORE - cong_scores[i];
+                sum += MAX_CONG_SCORE - _cong_scores[i];
             }
         }
 
@@ -153,7 +194,7 @@ ProcessMWanHeader2::update_distribution()
             uint32_t sum2 = 0;
             int add_to = -1;
             for (int j = 0; j < c_below; j++) {
-                sum2 += MAX_CONG_SCORE - cong_scores[below_avg[j]];
+                sum2 += MAX_CONG_SCORE - _cong_scores[below_avg[j]];
                 if (r <= sum2) {
                     add_to = j;
                     break;
@@ -177,7 +218,7 @@ ProcessMWanHeader2::update_distribution()
         int c_zero = 0;
 
         for (unsigned int i = 0; i < _max_paint; i++) {
-            if (cong_scores[i] > 0) {
+            if (_cong_scores[i] > 0) {
                 non_zero_score[c_non_zero] = i;
                 c_non_zero++;
             } else {
@@ -198,7 +239,34 @@ ProcessMWanHeader2::update_distribution()
             _distrib[curr_index] -= distrib_shift;
 
         }
+
+        delete non_zero_score;
+        delete zero_score;
     }
+}
+
+/*
+  update_cong_scores() needs to be called first. Assumes this is only called
+  when there is a FlowAgeSplitter element to call
+ */
+void
+ProcessMWanHeader2::bump_flows_if_need()
+{
+    uint32_t sum = 0;
+    bool bIsCongested = true;
+    for (unsigned int i = 0; i < _max_paint; i++) {
+        sum += _cong_scores[i];
+        if (_cong_scores[i] == 0)
+            bIsCongested = false;
+    }
+
+    if (bIsCongested && (sum/_max_paint >= _flowsplit_threshold)) {
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+        click_chatter("[PROCESSMWANHEADER2] Bumping %u flows.", _flowsplit_num);
+#endif
+        _elem_fas->bump_flows(_flowsplit_num);
+    }
+
 }
 
 uint32_t

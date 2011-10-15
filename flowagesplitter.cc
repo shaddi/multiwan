@@ -108,7 +108,7 @@ FlowAgeSplitter::run_timer(Timer *timer)
     assert(timer == &_timer);
 
 #ifdef CLICK_FLOWAGESPLITTER_DEBUG
-    click_chatter("Timer! Time for cleaning.");
+    //    click_chatter("Timer! Time for cleaning.");
 #endif
 
     _head->delete_me = false;
@@ -122,7 +122,7 @@ FlowAgeSplitter::run_timer(Timer *timer)
 
         if (curr->delete_me) { // reap node, haven't seen a new packet in a while.
 #ifdef CLICK_FLOWAGESPLITTER_DEBUG
-            click_chatter("Delete flow! %u", curr->flowID);
+            //            click_chatter("Delete flow! %u", curr->flowID);
 #endif
             curr->prev->next = curr->next;
             curr->next->prev = curr->prev;
@@ -146,6 +146,10 @@ FlowAgeSplitter::bump_flows(unsigned int n)
 
         i++;
     }
+
+#ifdef CLICK_FLOWAGESPLITTER_DEBUG
+    click_chatter("Told to bump %u flows, bump %u", n, i);
+#endif
 
     _curr_thresh_order = _curr_thresh_node->orderID;
 }

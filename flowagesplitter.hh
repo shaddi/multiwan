@@ -7,7 +7,7 @@
 #include <click/timer.hh>
 CLICK_DECLS
 
-//#define CLICK_FLOWAGESPLITTER_DEBUG
+#define CLICK_FLOWAGESPLITTER_DEBUG
 
 /*
   =c
