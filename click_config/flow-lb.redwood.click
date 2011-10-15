@@ -38,13 +38,14 @@ host :: KernelTun(host_tun, DEVNAME tun_host);
 tun0 :: KernelTun(tun0, DEVNAME tun0);
 tun1 :: KernelTun(tun1, DEVNAME tun1);
 
-// input: rewrite to sacramento's dest IP
-tun0 -> IPAddrRewriter(pattern - - 192.168.200.100 - 0 0) -> host
-tun1 -> IPAddrRewriter(pattern - - 192.168.200.100 - 0 0) -> host
+// input: rewrite to tg source/dest IP (TODO: this should be a range for whole /24)
+tun0 -> IPAddrRewriter(pattern 192.168.100.100 - 192.168.200.100 - 0 0) -> host
+tun1 -> IPAddrRewriter(pattern 192.168.100.100 - 192.168.200.100 - 0 0) -> host
 
-// output: rewrite to NAT'd source IP
-dev15 :: IPAddrRewriter(pattern 192.168.25.2 - - - 0 0) -> tun0
-dev16 :: IPAddrRewriter(pattern 192.168.26.2 - - - 0 0) -> tun1
+// output: rewrite to NAT'd source/dest IPs
+eth1 :: Queue -> EtherEncap(0x0800, mac_a, mac_b) -> ToDevice(eth1)
+dev15 :: IPAddrRewriter(pattern 192.168.25.2 - 192.168.35.2 - 0 0) -> eth1
+dev16 :: IPAddrRewriter(pattern 192.168.26.2 - 192.168.36.2 - 0 0) -> eth1
 
 switch :: HashSwitch(12,12);
 

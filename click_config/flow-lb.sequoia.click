@@ -27,20 +27,25 @@
  * file is host-agnostic.
  */
 
-AddressInfo(mac_a 00:30:48:59:43:99, mac_b 00:30:48:5b:d7:13);
 // REDWOOD is A, SEQUOIA is B
-/* The sequoia side actually shouldn't do anything fancy, since we're doing NAT
- * on the redwood side (a real flow based lb doesn't need a tunnel, so why do
- * we need two click configs/instances?)
-
 AddressInfo(mac_a 00:30:48:59:43:99, mac_b 00:30:48:5b:d7:13);
 AddressInfo(side_a 192.168.200.0/24, side_b 192.168.100.0/24);
-AddressInfo(tun0 192.168.30.0/24); // sequoia specific
+AddressInfo(host_tun 192.168.30.0/24);
+AddressInfo(tun0 192.168.35.0/24);
+AddressInfo(tun1 192.168.36.0/24);
 
-tun :: KernelTun(tun0);
+host :: KernelTun(host_tun, DEVNAME tun_host);
+tun0 :: KernelTun(tun0, DEVNAME tun0);
+tun1 :: KernelTun(tun1, DEVNAME tun1);
 
-dev15 :: Queue -> EtherEncap(0x0800, mac_b, mac_a) -> ToDevice(eth1);
-dev16 :: Queue -> EtherEncap(0x0800, mac_b, mac_a) -> ToDevice(eth1:0);
+// input: rewrite to tg source/dest IP (TODO: this should be a range for whole /24)
+tun0 -> IPAddrRewriter(pattern 192.168.200.100 - 192.168.100.100 - 0 0) -> host
+tun1 -> IPAddrRewriter(pattern 192.168.200.100 - 192.168.100.100 - 0 0) -> host
+
+// output: rewrite to NAT'd source/dest IPs
+eth1 :: Queue -> EtherEncap(0x0800, mac_b, mac_a) -> ToDevice(eth1);
+dev15 :: IPAddrRewriter(pattern 192.168.35.2 - 192.168.25.2 - 0 0) -> eth1
+dev16 :: IPAddrRewriter(pattern 192.168.36.2 - 192.168.26.2 - 0 0) -> eth1
 
 switch :: HashSwitch(12,12);
 
@@ -67,4 +72,3 @@ ps16[1] -> IPMirror -> dev16;
 
 switch[0] -> ps15;
 switch[1] -> ps16;
-*/
