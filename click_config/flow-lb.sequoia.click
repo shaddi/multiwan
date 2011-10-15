@@ -27,6 +27,7 @@
  * file is host-agnostic.
  */
 
+AddressInfo(mac_a 00:30:48:59:43:99, mac_b 00:30:48:5b:d7:13);
 // REDWOOD is A, SEQUOIA is B
 /* The sequoia side actually shouldn't do anything fancy, since we're doing NAT
  * on the redwood side (a real flow based lb doesn't need a tunnel, so why do
