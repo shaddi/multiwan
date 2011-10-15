@@ -57,7 +57,7 @@ dir_classifier :: IPClassifier( src net 192.168.100.0/24,
                                 src net 192.168.200.0/24,
                                 -);
 
-tun -> MarkIPHeader -> dir_classifier;
+host -> MarkIPHeader -> dir_classifier;
 
 // packets are in the 200net > 100net direction, go straight to switch
 dir_classifier[0] -> Paint(0) -> switch;
