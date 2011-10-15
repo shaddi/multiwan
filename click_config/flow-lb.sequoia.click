@@ -28,6 +28,10 @@
  */
 
 // REDWOOD is A, SEQUOIA is B
+/* The sequoia side actually shouldn't do anything fancy, since we're doing NAT
+ * on the redwood side (a real flow based lb doesn't need a tunnel, so why do
+ * we need two click configs/instances?)
+
 AddressInfo(mac_a 00:30:48:59:43:99, mac_b 00:30:48:5b:d7:13);
 AddressInfo(side_a 192.168.200.0/24, side_b 192.168.100.0/24);
 AddressInfo(tun0 192.168.30.0/24); // sequoia specific
@@ -62,3 +66,4 @@ ps16[1] -> IPMirror -> dev16;
 
 switch[0] -> ps15;
 switch[1] -> ps16;
+*/
