@@ -1,4 +1,4 @@
-/* 
+/*
  * We want to bind each TCP flow to a single output line, but we need to
  * guarantee the same line is used for both directions of the flow. Thus, we
  * want to hash on the source/dest tuples for each packet, where the fields are
@@ -8,8 +8,8 @@
  * binding each flow to the same line. This approach avoids the need to perform
  * any encapsulation and is fully stateless.
  *
- * In addition, we should output directly to the device (bypass the kernel). 
- * 
+ * In addition, we should output directly to the device (bypass the kernel).
+ *
  * Unfortunately, I'm lazy, and doing the above would require writing a new
  * element. So what we do instead is run two seperate configurations for both
  * sides of our setup. On one side, we simply take a hash of the
@@ -17,11 +17,11 @@
  * beginning of the TCP header) and feed that to a hash switch, which directly
  * pushes to an output. On the other side, we first use IPMirror to reverse the
  * source/dest order at the input of the HashSwitch, and then reverse it again
- * at the output. 
- * 
+ * at the output.
+ *
  * We should allocate flows in a weighted fashion across lines for a fair
  * comparison...
- * 
+ *
  * Also, note this file is SPECIFIC to sequoia, in that it is using the
  * source/dest MAC addresses from the sequoia perspective. Otherwise, this conf
  * file is host-agnostic.
@@ -38,20 +38,31 @@ host :: KernelTun(host_tun, DEVNAME tun_host);
 tun0 :: KernelTun(tun0, DEVNAME tun0);
 tun1 :: KernelTun(tun1, DEVNAME tun1);
 
+eth1 :: Queue -> EtherEncap(0x0800, mac_b, mac_a) -> ToDevice(eth1);
+
+rw_out1 :: IPAddrPairRewriter(pattern 192.168.35.2 192.168.25.2 0 1)
+rw_out2 :: IPAddrPairRewriter(pattern 192.168.36.2 192.168.26.2 0 1)
+rw_in1 :: IPAddrPairRewriter(pattern 192.168.200.100 192.168.100.100 0 1)
+rw_in2 :: IPAddrPairRewriter(pattern 192.168.200.100 192.168.100.100 0 1)
+
 // input: rewrite to tg source/dest IP (TODO: this should be a range for whole /24)
-tun0 -> IPAddrRewriter(pattern 192.168.200.100 - 192.168.100.100 - 0 0) -> host
-tun1 -> IPAddrRewriter(pattern 192.168.200.100 - 192.168.100.100 - 0 0) -> host
+tun0 -> rw_in1 -> host
+tun1 -> rw_in2 -> host
 
 // output: rewrite to NAT'd source/dest IPs
-eth1 :: Queue -> EtherEncap(0x0800, mac_b, mac_a) -> ToDevice(eth1);
-dev15 :: IPAddrRewriter(pattern 192.168.35.2 - 192.168.25.2 - 0 0) -> eth1
-dev16 :: IPAddrRewriter(pattern 192.168.36.2 - 192.168.26.2 - 0 0) -> eth1
+out1 :: Null -> rw_out1 -> eth1
+out2 :: Null -> rw_out2 -> eth1
+
+rw_in1[1] -> Discard
+rw_in2[1] -> Discard
+rw_out1[1] -> Discard
+rw_out2[1] -> Discard
 
 switch :: HashSwitch(12,12);
 
 // keep track of which packets need to be mirrored on each line.
-ps15 :: PaintSwitch;
-ps16 :: PaintSwitch;
+ps1 :: PaintSwitch;
+ps2 :: PaintSwitch;
 
 dir_classifier :: IPClassifier( src net 192.168.100.0/24,
                                 src net 192.168.200.0/24,
@@ -64,11 +75,11 @@ dir_classifier[0] -> Paint(0) -> switch;
 dir_classifier[1] -> Paint(1) -> IPMirror -> switch;
 dir_classifier[2] -> Discard;
 
-ps15[0] -> dev15;
-ps15[1] -> IPMirror -> dev15;
+ps1[0] -> out1;
+ps1[1] -> IPMirror -> out1;
 
-ps16[0] -> dev16;
-ps16[1] -> IPMirror -> dev16;
+ps2[0] -> out2;
+ps2[1] -> IPMirror -> out2;
 
-switch[0] -> ps15;
-switch[1] -> ps16;
+switch[0] -> ps1;
+switch[1] -> ps2;
