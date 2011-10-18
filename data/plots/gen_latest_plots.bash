@@ -12,7 +12,7 @@ for c in `cat confs`; do
     echo -n "plot " >> ${output_file}
 
     for exptype in "${exptypes[@]}"; do
-        stats_path=`ls -l ../${exptype} | grep ${c} | awk '{print $8}' | tail -n 1`
+        stats_path=`ls -lrt ../${exptype} | grep ${c} | awk '{print $8}' | tail -n 1`
         california_stats="../${exptype}/${stats_path}/results/california/conn_durs.california.stats"
         has_it=`ls ${california_stats} | wc -l`
         if [ ${has_it} -gt 0 ]; then
