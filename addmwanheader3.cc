@@ -97,7 +97,7 @@ AddMWanHeader3::simple_action(Packet *p)
                   now_us, cd.bitmap, cd.seq_num);
 #endif
 
-    unsigned short max_latency_delta = _elem_cld->get_max_delta();
+    unsigned short max_latency_delta = (_elem_cld->get_max_delta())/1000;
     unsigned short *p_mld = (unsigned short*) (q->data() + (8+2+2));
     *p_mld = max_latency_delta;
 

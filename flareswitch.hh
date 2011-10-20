@@ -10,7 +10,7 @@ struct click_ip;
 
 CLICK_DECLS
 
-//#define CLICK_FLARESWITCH_DEBUG
+#define CLICK_FLARESWITCH_DEBUG
 
 /*
   =c

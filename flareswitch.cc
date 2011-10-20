@@ -36,7 +36,7 @@ FlareSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
         _token_reset_int = tmp;
 
 #ifdef CLICK_FLARESWITCH_DEBUG
-    click_chatter("[FLARESWITCH] configure");
+    //    click_chatter("[FLARESWITCH] configure");
 #endif
 
     return 0;
@@ -61,7 +61,7 @@ FlareSwitch::initialize(ErrorHandler *)
     _timer.schedule_now();
 
 #ifdef CLICK_FLARESWITCH_DEBUG
-    click_chatter("[FLARESWITCH] initialize");
+    //    click_chatter("[FLARESWITCH] initialize");
 #endif
 
     return 0;
@@ -78,7 +78,7 @@ void
 FlareSwitch::cleanup(CleanupStage)
 {
 #ifdef CLICK_FLARESWITCH_DEBUG
-    click_chatter("[FLARESWITCH] cleanup");
+    //    click_chatter("[FLARESWITCH] cleanup");
 #endif
 
     delete[] _distrib;
@@ -97,10 +97,6 @@ FlareSwitch::push(int, Packet *p)
 #endif
 
     update_tokens(p->length());
-
-#ifdef CLICK_FLARESWITCH_DEBUG
-    //    click_chatter("[FLARESWITCH] here1");
-#endif
 
     const click_ip *iph = p->ip_header();
 
@@ -122,10 +118,6 @@ FlareSwitch::push(int, Packet *p)
     unsigned short flowID = crc16((char*) &ft, sizeof(FlowTuple));
 
     FlowData *fd = _hshFIdFD[flowID];
-
-#ifdef CLICK_FLARESWITCH_DEBUG
-    //    click_chatter("[FLARESWITCH] here2");
-#endif
 
     int port;
     uint64_t new_time = p->timestamp_anno().sec() * ((uint64_t) 1000000) +
@@ -194,9 +186,6 @@ FlareSwitch::run_timer(Timer *timer)
 void
 FlareSwitch::set_distribution(unsigned int total, const uint32_t distrib[])
 {
-#ifdef CLICK_FLARESWITCH_DEBUG
-    click_chatter("[FLARESWITCH] set_distribution");
-#endif
     uint32_t *tmp_distrib = new uint32_t[total];
     int sum = 0;
     for (unsigned int i = 0; i < total; i++) {
@@ -211,9 +200,9 @@ FlareSwitch::set_distribution(unsigned int total, const uint32_t distrib[])
     delete[] tmp_distrib2;
 
 #ifdef CLICK_FLARESWITCH_DEBUG
-    click_chatter("[FLARESWITCH] NEW DISTRIBUTION: ");
-    for (int i = 0; i < _total_ports; i++)
-        click_chatter("[FLARESWITCH]  %d", _distrib[i]);
+    // click_chatter("[FLARESWITCH] NEW DISTRIBUTION: ");
+    // for (int i = 0; i < _total_ports; i++)
+    //     click_chatter("[FLARESWITCH]  %d", _distrib[i]);
 #endif
 }
 
@@ -221,7 +210,7 @@ void
 FlareSwitch::set_mtbs(unsigned int mtbs)
 {
 #ifdef CLICK_FLARESWITCH_DEBUG
-    //    click_chatter("[FLARESWITCH] set_mtbs");
+    click_chatter("[FLARESWITCH] MTBS %u", mtbs);
 #endif
     _mtbs = mtbs;
 }

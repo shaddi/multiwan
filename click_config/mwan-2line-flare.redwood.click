@@ -21,8 +21,6 @@ ph :: ProcessMWanHeader3(FLARESWITCH fs, MAX_PAINT $max_paint,
                        DISTRIB_MIN 5 // Smallest points a line can have
                        );
 
-tcpr :: TCPReorderer(CALCLATENCYDELTA cld);
-
 ccd0 :: CalcCongestionDelta(OFFSET $offset);
 ccd1 :: CalcCongestionDelta(OFFSET $offset);
 
@@ -41,7 +39,7 @@ tun1 :: Null -> tun1_dev;
 // tun1 :: Null -> c1 :: Counter -> tun1_dev;
 
 // TODO: take Unqueue out
-host -> fs;
+host -> MarkIPHeader -> SEtTimestamp -> fs;
 
 cld -> ph -> Discard;
 
@@ -52,12 +50,7 @@ tun1_dev -> tee1 :: Tee();
 tee0[0] -> Paint(0) -> SetTimestamp -> StripIPHeader -> ccd0 -> cld;
 tee1[0] -> Paint(1) -> SetTimestamp -> StripIPHeader -> ccd1 -> cld;
 
-ipcTcp :: IPClassifier(tcp, -);
-ipcTcp[0] -> MarkIPHeader -> AggregateIPFlows -> StripIPHeader ->
-          tcpr -> UnstripIPHeader -> host;
-ipcTcp[1] -> MarkIPHeader -> host;
-
-to_internet :: StripIPHeader -> Strip(12) -> ipcTcp;
+to_internet :: StripIPHeader -> Strip(14) -> MarkIPHeader -> host;
 
 tee0[1] -> to_internet;
 tee1[1] -> to_internet;

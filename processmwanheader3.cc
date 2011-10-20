@@ -12,7 +12,7 @@ ProcessMWanHeader3::ProcessMWanHeader3()
       _cong_scores(0), _distrib(0), _distrib_total(100), _distrib_inc(5),
       _distrib_min(5), _flowsplit_num(FLOWSPLIT_NUM),
       _flowsplit_threshold(FLOWSPLIT_THRESHOLD), _c_uniform_cong(0),
-      _c_cong_mask(0), _mtbs(-1)
+      _c_cong_mask(0), _mtbs(0)
 {
 }
 
@@ -123,7 +123,8 @@ ProcessMWanHeader3::simple_action(Packet *p)
 
     _cong_deltas[paint] = cong_delta;
     _cong_seq_nums[paint] = cong_seq_num;
-    _mtbs = *((unsigned short*) (p->data()+(8+2+2)));
+    unsigned short mtbs = *((unsigned short*) (p->data()+(8+2+2)));
+    _mtbs = ((mtbs*5)/100) + ((_mtbs*5)/100);
 
     return p;
 }
@@ -133,32 +134,15 @@ ProcessMWanHeader3::run_timer(Timer *timer)
 {
     assert(timer == &_timer);
 
-    bool update = true;
+    update_cong_scores();
 
-    // for (int i = 0; i < _max_paint; i++) {
-    //     if (_elem_ds->get_pkt_count(i) < MAX_CONG_SCORE)
-    //         update = false;
-    //     _elem_ds->reset_pkt_count(i);
-    // }
+    update_distribution();
 
-#ifdef CLICK_PROCESSMWANHEADER3_DEBUG
-    // click_chatter("[PROCESSMWANHEADER3] UPDATE %s", update ?
-    //               "YES -------------------------------------" :
-    //               " NO |||||||||||||||||||||||||||||||||||||");
-#endif
+    _elem_fs->set_distribution(_max_paint, _distrib);
+    _elem_fs->set_mtbs(_mtbs);
 
-    if (update) {
-        update_cong_scores();
-
-        update_distribution();
-
-        _elem_fs->set_distribution(_max_paint, _distrib);
-        if (_mtbs < -1) // This is a cheat, since default is set by FlareSwitch
-            _elem_fs->set_mtbs(_mtbs);
-
-        if (_elem_fas)
-            bump_flows_if_need();
-    }
+    if (_elem_fas)
+        bump_flows_if_need();
 
 #ifdef CLICK_PROCESSMWANHEADER3_DEBUG
         bool badness = false;
