@@ -56,7 +56,7 @@ AddMWanHeader2::simple_action(Packet *p)
 // #ifdef CLICK_ADDMWANHEADER2_DEBUG
 //     click_chatter("[ADDMWANHEADER2] packet->push %d", 8+2);
 // #endif
-    WritablePacket *q = p->push(8+2);
+    WritablePacket *q = p->push(8+2+2);
     if (!q)
         return 0;
 
@@ -75,21 +75,18 @@ AddMWanHeader2::simple_action(Packet *p)
     //   *tmp |= ((now_us % mult) > 0 ? 1<<i : 0);
     // }
 
-#ifdef CLICK_ADDMWANHEADER2_DEBUG
-    click_chatter("[ADDMWANHEADER2] timestamp %llu", now_us);
-    // click_chatter("[ADDMWANHEADER2] tmp %x%x %x%x %x%x %x%x", q->data()[0],
-    //               q->data()[1],
-    //               q->data()[2],
-    //               q->data()[3],
-    //               q->data()[4],
-    //               q->data()[5],
-    //               q->data()[6],
-    //               q->data()[7]);
-#endif
+    // TODO:Congestion data
+    CongestionData cd = _elem_ccd->get_congestion_data();
 
-    // TODO:Congestion bits
-    unsigned short *p_cb = (unsigned short*) (q->data() + 8);
-    *p_cb = _elem_ccd->get_congestion_score();
+    unsigned short *p_cbm = (unsigned short*) (q->data() + 8);
+    *p_cbm = cd.bitmap;
+    unsigned short *p_sn = (unsigned short*) (q->data() + (8+2));
+    *p_sn = cd.seq_num;
+
+#ifdef CLICK_ADDMWANHEADER2_DEBUG
+    click_chatter("[ADDMWANHEADER2] timestamp %llu bitmap %x seq_num %u",
+                  now_us, cd.bitmap, cd.seq_num);
+#endif
 
     return q;
 }

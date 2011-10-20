@@ -8,7 +8,7 @@
 #include "flowagesplitter.hh"
 CLICK_DECLS
 
-#define CLICK_PROCESSMWANHEADER2_DEBUG
+//#define CLICK_PROCESSMWANHEADER2_DEBUG
 
 /*
   =c
@@ -104,6 +104,8 @@ private:
     unsigned int _max_paint;
     uint32_t _update_int;
     unsigned short *_cong_deltas;
+    unsigned short *_cong_seq_nums;
+    unsigned short *_cong_seq_nums_last_update;
     unsigned short *_cong_scores;
     uint32_t *_distrib;
     uint32_t _distrib_total;
@@ -111,6 +113,8 @@ private:
     uint32_t _distrib_min;
     unsigned int _flowsplit_num;
     unsigned short _flowsplit_threshold;
+    unsigned short _c_uniform_cong;
+    uint32_t _c_cong_mask;
 
     void update_cong_scores();
     void update_distribution(); // update_cong_scores() needs to be called first.
@@ -118,7 +122,7 @@ private:
 
     uint32_t get_distrib_shift(int);
 
-    static unsigned short static_count_ones(unsigned short num);
+    static unsigned short static_count_ones(unsigned short num, uint32_t c_mask);
     static bool static_ary_equals(int size, int *a, int *b);
 };
 

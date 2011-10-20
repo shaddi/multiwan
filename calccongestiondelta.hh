@@ -36,8 +36,12 @@ CLICK_DECLS
 
 #define CLICK_CALCCONGESTIONDELTA_MAX_DELTAS 16
 //#define CLICK_CALCCONGESTIONDELTA_SENSITIVITY 7000
-#define CLICK_CALCCONGESTIONDELTA_SENSITIVITY 10000 //This is in microseconds
+#define CLICK_CALCCONGESTIONDELTA_SENSITIVITY 25000 //This is in microseconds
 
+struct CongestionData {
+    unsigned short bitmap;
+    unsigned short seq_num;
+};
 
 class CalcCongestionDelta : public Element {
 public:
@@ -58,6 +62,8 @@ public:
 
     unsigned short get_congestion_score();
 
+    CongestionData get_congestion_data();
+
 private:
     struct CongestionDeltaElem {
         uint32_t my_delta;
@@ -74,6 +80,8 @@ private:
     uint64_t _prev_o_timestamp;
 
     unsigned int _offset;
+
+    unsigned short _seq_num;
 
     static String static_get_congestion_score(Element*, void*);
 };

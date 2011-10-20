@@ -27,8 +27,8 @@ CLICK_DECLS
   |                 Timestamp in microseconds                   |
   |                                                             |
   |-------------------------------------------------------------|
-  |        congestion bool        |
-  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |        congestion bitmap      |     congestion seq num      |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
   Keyword arguments:
 

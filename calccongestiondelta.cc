@@ -1,12 +1,12 @@
 // -*- c-basic-offset: 4 -*-
 #include <click/config.h>
-#include "calccongestiondelta.hh"
 #include <click/confparse.hh>
 #include <stdio.h>
+#include "calccongestiondelta.hh"
 CLICK_DECLS
 
 CalcCongestionDelta::CalcCongestionDelta()
-  :_offset(0)
+    :_offset(0), _seq_num(0)
 {
   CongestionDeltaElem *curr = new CongestionDeltaElem;
   curr->my_delta = 0;
@@ -130,6 +130,8 @@ CalcCongestionDelta::simple_action(Packet *p)
   _listTail = _listTail->prev;
   _listHead = tmp;
 
+  _seq_num++;
+
   return p;
 }
 
@@ -169,10 +171,21 @@ CalcCongestionDelta::get_congestion_score()
         i++;
     } while (curr != _listHead);
 
-    click_chatter("[CALCCONGESTIONDELTA] Binary %s", binary);
+    click_chatter("[CALCCONGESTIONDELTA] Bitmap %s", binary);
 #endif
 
   return tmp;
+}
+
+CongestionData
+CalcCongestionDelta::get_congestion_data()
+{
+    CongestionData cd;
+
+    cd.bitmap = get_congestion_score();
+    cd.seq_num = _seq_num;
+
+    return cd;
 }
 
 String

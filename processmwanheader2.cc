@@ -8,9 +8,11 @@ CLICK_DECLS
 
 ProcessMWanHeader2::ProcessMWanHeader2()
     : _elem_ds(0), _elem_fas(0), _timer(this), _max_paint(0), _update_int(0),
-      _cong_deltas(0), _cong_scores(0), _distrib(0), _distrib_total(100),
-      _distrib_inc(5), _distrib_min(5), _flowsplit_num(FLOWSPLIT_NUM),
-      _flowsplit_threshold(FLOWSPLIT_THRESHOLD)
+      _cong_deltas(0), _cong_seq_nums(0), _cong_seq_nums_last_update(0),
+      _cong_scores(0), _distrib(0), _distrib_total(100), _distrib_inc(5),
+      _distrib_min(5), _flowsplit_num(FLOWSPLIT_NUM),
+      _flowsplit_threshold(FLOWSPLIT_THRESHOLD), _c_uniform_cong(0),
+      _c_cong_mask(0)
 {
 }
 
@@ -60,11 +62,15 @@ ProcessMWanHeader2::configure(Vector<String> &conf, ErrorHandler *errh)
         _flowsplit_threshold = tmp2;
 
     _cong_deltas = new unsigned short[_max_paint];
+    _cong_seq_nums = new unsigned short[_max_paint];
+    _cong_seq_nums_last_update = new unsigned short[_max_paint];
     _cong_scores = new unsigned short[_max_paint];
     _distrib = new uint32_t[_max_paint];
 
     for (unsigned int i = 0; i < _max_paint; i++) {
         _cong_deltas[i] = 0;
+        _cong_seq_nums[i] = 0;
+        _cong_seq_nums_last_update[i] = 0;
         _cong_scores[i] = 0;
         _distrib[i] = _distrib_total/_max_paint;
     }
@@ -92,9 +98,11 @@ ProcessMWanHeader2::add_handlers()
 void
 ProcessMWanHeader2::cleanup(CleanupStage)
 {
-    delete _cong_deltas;
-    delete _cong_scores;
-    delete _distrib;
+    delete[] _cong_deltas;
+    delete[] _cong_seq_nums;
+    delete[] _cong_seq_nums_last_update;
+    delete[] _cong_scores;
+    delete[] _distrib;
 }
 
 Packet *
@@ -106,12 +114,15 @@ ProcessMWanHeader2::simple_action(Packet *p)
 
     int paint = PAINT_ANNO(p);
     unsigned short cong_delta = *((unsigned short*) (p->data()+8));
+    unsigned short cong_seq_num = *((unsigned short*) (p->data()+8+2));
 
 #ifdef CLICK_PROCESSMWANHEADER2_DEBUG
     //    click_chatter("It says the congestion delta is %x for line %d", cong_delta, paint);
+    //    click_chatter("[PROCESSMWANHEADER2] paint %d seq_num %u ", paint, cong_seq_num);
 #endif
 
     _cong_deltas[paint] = cong_delta;
+    _cong_seq_nums[paint] = cong_seq_num;
 
     return p;
 }
@@ -121,23 +132,56 @@ ProcessMWanHeader2::run_timer(Timer *timer)
 {
     assert(timer == &_timer);
 
-    update_cong_scores();
+    bool update = true;
 
-    update_distribution();
+    // for (int i = 0; i < _max_paint; i++) {
+    //     if (_elem_ds->get_pkt_count(i) < MAX_CONG_SCORE)
+    //         update = false;
+    //     _elem_ds->reset_pkt_count(i);
+    // }
 
 #ifdef CLICK_PROCESSMWANHEADER2_DEBUG
-    bool badness = false;
-    for (unsigned int i = 0; i < _max_paint; i++)
-        if (_distrib[i] < _distrib_min)
-            badness = true;
-    if (badness)
-        click_chatter("[PROCESSMWANHEADER2] Some of distribution is < min!");
+    // click_chatter("[PROCESSMWANHEADER2] UPDATE %s", update ?
+    //               "YES -------------------------------------" :
+    //               " NO |||||||||||||||||||||||||||||||||||||");
 #endif
 
-    _elem_ds->set_distribution(_max_paint, _distrib);
+    if (update) {
+        update_cong_scores();
 
-    if (_elem_fas)
-        bump_flows_if_need();
+        update_distribution();
+
+        _elem_ds->set_distribution(_max_paint, _distrib);
+
+        if (_elem_fas)
+            bump_flows_if_need();
+    }
+
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+        bool badness = false;
+        char buffer[256];
+        char buffer2[256];
+        sprintf(buffer, "");
+        sprintf(buffer2, "");
+        for (unsigned int i = 0; i < _max_paint; i++) {
+            if ((_distrib[i] < _distrib_min) || (_distrib[i] > _distrib_total))
+                badness = true;
+
+            char tmp[100];
+            sprintf(tmp, "%s", buffer);
+            char tmp2[100];
+            sprintf(tmp2, "%s", buffer2);
+
+            sprintf(buffer, "%s %u", tmp, _cong_scores[i]);
+            sprintf(buffer2, "%s %u", tmp2, _distrib[i]);
+        }
+
+        // click_chatter("[PROCESSMWANHEADER2] cong scores:  %s", buffer);
+        click_chatter("[PROCESSMWANHEADER2] distribution: %s", buffer2);
+
+        if (badness)
+            click_chatter("[PROCESSMWANHEADER2] Some of distribution is < min!");
+#endif
 
     _timer.reschedule_after_msec(_update_int);
 }
@@ -145,13 +189,46 @@ ProcessMWanHeader2::run_timer(Timer *timer)
 void
 ProcessMWanHeader2::update_cong_scores()
 {
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+    char buffer[256];
+    sprintf(buffer, "");
+    char buffer2[256];
+    sprintf(buffer2, "");
+#endif
+
+    uint32_t min = MAX_CONG_SCORE;
+    for (unsigned int i = 0; i < _max_paint; i++) {
+        uint32_t tmp = _cong_seq_nums[i] - _cong_seq_nums_last_update[i];
+        _cong_seq_nums_last_update[i] = _cong_seq_nums[i];
+        if (tmp < min)
+            min = tmp;
+        _elem_ds->reset_pkt_count(i);
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+        char tmp2[256];
+        sprintf(tmp2, "%s", buffer2);
+        sprintf(buffer2, "%s %u", tmp2, tmp);
+#endif
+    }
+
     unsigned short *cong_scores = new unsigned short[_max_paint];
-    for (unsigned int i = 0; i < _max_paint; i++)
-        cong_scores[i] = static_count_ones(_cong_deltas[i]);
+    for (unsigned int i = 0; i < _max_paint; i++) {
+        cong_scores[i] = static_count_ones(_cong_deltas[i], min);
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+        char tmp[256];
+        sprintf(tmp, "%s", buffer);
+        sprintf(buffer, "%s %x:%u", tmp, _cong_deltas[i], cong_scores[i]);
+#endif
+    }
+
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+    click_chatter("[PROCESSMWANHEADER2] congestion (cMask %u [%s]): %s",
+                  min, buffer2, buffer);
+#endif
 
     unsigned short *tmp = _cong_scores;
     _cong_scores = cong_scores;
-    delete tmp;
+    _c_cong_mask = min;
+    delete[] tmp;
 }
 
 // update_cong_scores() needs to be called first.
@@ -164,14 +241,47 @@ ProcessMWanHeader2::update_distribution()
 
     uint32_t sum = 0;
     int c_not_cong = 0;
+    bool b_scores_equal = true;
+    uint32_t prev_score = _cong_scores[0];
     for (unsigned int i = 0; i < _max_paint; i++) {
         sum += _cong_scores[i];
         if (_cong_scores[i] == 0)
             c_not_cong++;
+        if (prev_score != _cong_scores[i])
+            b_scores_equal = false;
     }
     uint32_t avg = sum/_max_paint;
  
-    if (c_not_cong == 0) {
+    // if (b_scores_equal)
+    //     _c_uniform_cong++;
+    // else
+    //     _c_uniform_cong = 0;
+
+    //    if (_c_uniform_cong >= 2) {
+    if (b_scores_equal){// && (_c_cong_mask > 0)) {
+        //        _c_uniform_cong = 0;
+
+        uint32_t min = _distrib_total;
+        unsigned int min_i = -1;
+        uint32_t max = 0;
+        unsigned int max_i = -1;
+        for (unsigned int i = 0; i < _max_paint; i++) {
+            if (min > _distrib[i]) {
+                min = _distrib[i];
+                min_i = i;
+            }
+            if (max < _distrib[i]) {
+                max = _distrib[i];
+                max_i = i;
+            }
+        }
+
+        uint32_t distrib_shift = get_distrib_shift(max_i);
+
+        _distrib[min_i] += distrib_shift;
+        _distrib[max_i] -= distrib_shift;
+
+    } else if (c_not_cong == 0) {
         unsigned int *above_avg = new unsigned int[_max_paint];
         unsigned int *below_avg = new unsigned int[_max_paint];
         int c_above = 0;
@@ -201,16 +311,24 @@ ProcessMWanHeader2::update_distribution()
                 }
             }
 
+#ifdef CLICK_PROCESSMWANHEADER2_DEBUG
+            if (add_to < 0)
+                click_chatter("[PROCESSMWANHEADER2] FREAK OUT! (add_t < 0) =====================================");
+            // else
+            //     click_chatter("[PROCESSMWANHEADER2] add_t = %d line %d", add_to,
+            //                   below_avg[add_to]);
+#endif
             int curr_index = above_avg[i];
+            int recv_traffic_index = below_avg[add_to];
 
-            uint32_t distrib_shift = get_distrib_shift(curr_index);
+             uint32_t distrib_shift = get_distrib_shift(curr_index);
 
-            _distrib[add_to] += distrib_shift;
+            _distrib[recv_traffic_index] += distrib_shift;
             _distrib[curr_index] -= distrib_shift;
         }
 
-        delete above_avg;
-        delete below_avg;
+        delete[] above_avg;
+        delete[] below_avg;
     } else {
         unsigned int *non_zero_score = new unsigned int[_max_paint];
         unsigned int *zero_score = new unsigned int[_max_paint];
@@ -240,8 +358,8 @@ ProcessMWanHeader2::update_distribution()
 
         }
 
-        delete non_zero_score;
-        delete zero_score;
+        delete[] non_zero_score;
+        delete[] zero_score;
     }
 }
 
@@ -286,11 +404,11 @@ ProcessMWanHeader2::get_distrib_shift(int curr_index)
 }
 
 unsigned short
-ProcessMWanHeader2::static_count_ones(unsigned short num)
+ProcessMWanHeader2::static_count_ones(unsigned short num, uint32_t c_mask)
 {
     unsigned short count = 0;
-    for(int i = 0; i < MAX_CONG_SCORE; i++) {
-        if (num & (1 << i))
+    for(unsigned int i = 0; i < MAX_CONG_SCORE; i++) {
+        if ((num & (1 << i)) && (i >= (MAX_CONG_SCORE - c_mask)))
             count++;
     }
 
