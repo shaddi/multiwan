@@ -17,7 +17,7 @@ ds :: DistroSwitch;
 ph :: ProcessMWanHeader2(DISTROSWITCH ds, MAX_PAINT $max_paint,
                        UPDATE_INT 100, // Update interval for DistroSwitch (ms)
                        DISTRIB_TOTAL 100, // Total "points" giving to lines
-                       DISTRIB_INC 10, // Points move b/t lines when redistribute
+                       DISTRIB_INC 1, // Points move b/t lines when redistribute
                        DISTRIB_MIN 5 // Smallest points a line can have
                        );
 
@@ -38,11 +38,11 @@ AddressInfo(tun0 192.168.25.0/24);
 AddressInfo(tun1 192.168.26.0/24);
 AddressInfo(tun2 192.168.27.0/24);
 AddressInfo(tun3 192.168.28.0/24);
-host :: KernelTun(host_tun, DEVNAME tun_host); // TODO: Fix me.
-tun0_dev :: KernelTun(tun0, DEVNAME tun0);
-tun1_dev :: KernelTun(tun1, DEVNAME tun1);
-tun2_dev :: KernelTun(tun2, DEVNAME tun2);
-tun3_dev :: KernelTun(tun3, DEVNAME tun3);
+host :: KernelTun(host_tun, DEVNAME tun_host, MTU 2000); // TODO: Fix me.
+tun0_dev :: KernelTun(tun0, DEVNAME tun0, MTU 2000);
+tun1_dev :: KernelTun(tun1, DEVNAME tun1, MTU 2000);
+tun2_dev :: KernelTun(tun2, DEVNAME tun2, MTU 2000);
+tun3_dev :: KernelTun(tun3, DEVNAME tun3, MTU 2000);
 tun0 :: Null -> tun0_dev;
 tun1 :: Null -> tun1_dev;
 tun2 :: Null -> tun2_dev;
@@ -69,7 +69,7 @@ ipcTcp[0] -> MarkIPHeader -> AggregateIPFlows -> StripIPHeader ->
           tcpr -> UnstripIPHeader -> host;
 ipcTcp[1] -> MarkIPHeader -> host;
 
-to_internet :: StripIPHeader -> Strip(10) -> ipcTcp;
+to_internet :: StripIPHeader -> Strip(12) -> ipcTcp;
 
 tee0[1] -> to_internet;
 tee1[1] -> to_internet;

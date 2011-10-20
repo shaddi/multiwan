@@ -21,7 +21,7 @@ c0_ds :: DistroSwitch;
 c0_ph :: ProcessMWanHeader2(DISTROSWITCH c0_ds, MAX_PAINT $c0_max_paint,
                        UPDATE_INT 100, // Update interval for DistroSwitch (ms)
                        DISTRIB_TOTAL 100, // Total "points" giving to lines
-                       DISTRIB_INC 10, // Points move b/t lines when redistribute
+                       DISTRIB_INC 1, // Points move b/t lines when redistribute
                        DISTRIB_MIN 5, // Smallest points a line can have
                        FLOWAGESPLITTER fas // Splits between classes
                        // FLOWSPLIT_NUM , // Using default (1) for now
@@ -44,9 +44,9 @@ c1_ds :: DistroSwitch;
 c1_ph :: ProcessMWanHeader2(DISTROSWITCH c1_ds, MAX_PAINT $c1_max_paint,
                        UPDATE_INT 100, // Update interval for DistroSwitch (ms)
                        DISTRIB_TOTAL 100, // Total "points" giving to lines
-                       DISTRIB_INC 10, // Points move b/t lines when redistribute
+                       DISTRIB_INC 1, // Points move b/t lines when redistribute
                        DISTRIB_MIN 5 // Smallest points a line can have
-                       // Since this is the "lower" class doesn't seen flow stuff
+                       // Since this is the "lower" class doesn't see flow stuff
                        );
 
 c1_tcpr :: TCPReorderer(CALCLATENCYDELTA c1_cld);
@@ -63,11 +63,11 @@ AddressInfo(tun0 192.168.35.0/24);
 AddressInfo(tun1 192.168.36.0/24);
 AddressInfo(tun2 192.168.37.0/24);
 AddressInfo(tun3 192.168.38.0/24);
-host :: KernelTun(host_tun, DEVNAME tun_host); // TODO: Fix me.
-tun0_dev :: KernelTun(tun0, DEVNAME tun0);
-tun1_dev :: KernelTun(tun1, DEVNAME tun1);
-tun2_dev :: KernelTun(tun2, DEVNAME tun2);
-tun3_dev :: KernelTun(tun3, DEVNAME tun3);
+host :: KernelTun(host_tun, DEVNAME tun_host, MTU 2000); // TODO: Fix me.
+tun0_dev :: KernelTun(tun0, DEVNAME tun0, MTU 2000);
+tun1_dev :: KernelTun(tun1, DEVNAME tun1, MTU 2000);
+tun2_dev :: KernelTun(tun2, DEVNAME tun2, MTU 2000);
+tun3_dev :: KernelTun(tun3, DEVNAME tun3, MTU 2000);
 tun0 :: Null -> tun0_dev;
 tun1 :: Null -> tun1_dev;
 tun2 :: Null -> tun2_dev;
@@ -103,8 +103,8 @@ c1_ipcTcp[0] -> MarkIPHeader -> AggregateIPFlows -> StripIPHeader ->
           c1_tcpr -> UnstripIPHeader -> host;
 c1_ipcTcp[1] -> MarkIPHeader -> host;
 
-c0_to_internet :: StripIPHeader -> Strip(10) -> c0_ipcTcp;
-c1_to_internet :: StripIPHeader -> Strip(10) -> c1_ipcTcp;
+c0_to_internet :: StripIPHeader -> Strip(12) -> c0_ipcTcp;
+c1_to_internet :: StripIPHeader -> Strip(12) -> c1_ipcTcp;
 
 c0_tee0[1] -> c0_to_internet;
 c0_tee1[1] -> c0_to_internet;
