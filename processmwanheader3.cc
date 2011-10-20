@@ -124,7 +124,7 @@ ProcessMWanHeader3::simple_action(Packet *p)
     _cong_deltas[paint] = cong_delta;
     _cong_seq_nums[paint] = cong_seq_num;
     unsigned short mtbs = *((unsigned short*) (p->data()+(8+2+2)));
-    _mtbs = ((mtbs*5)/100) + ((_mtbs*5)/100);
+    _mtbs = ((mtbs*5)/10) + ((_mtbs*5)/10);
 
     return p;
 }
