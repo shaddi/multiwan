@@ -16,7 +16,8 @@ ph :: ProcessMWanHeader2(DISTROSWITCH ds, MAX_PAINT 2, UPDATE_INT 100,
 
 rs1 :: InfiniteSource(ACTIVE false, LIMIT 1);
 rs2 :: InfiniteSource(ACTIVE false, LIMIT 1);
-rsd :: InfiniteSource(ACTIVE false, LIMIT 1);
+//rsd :: InfiniteSource(ACTIVE false, LIMIT 1);
+rsd :: InfiniteSource();
 
 rs1 -> SetTimestamp -> ah1 -> Queue -> duq1::DelayUnqueue(.05) -> ccd1 -> Paint(0) -> SetTimestamp -> c1::Counter() -> ph;
 
@@ -33,6 +34,7 @@ rateS1 :: Script(
           set dTime .05,
           label loop_beg,
           write rs1.active true,
+//          print "rs1 Send packet",
           wait $(wTime),
           write rs1.active false,
           write rs1.reset,
@@ -46,6 +48,7 @@ rateS1 :: Script(
 
           label loop_beg2,
           write rs1.active true,
+//          print "rs1 Send packet",
           wait $(wTime),
           write rs1.active false,
           write rs1.reset,
@@ -63,6 +66,7 @@ rateS2 :: Script(
           set dTime .05,
           label loop_beg,
           write rs2.active true,
+//          print "rs2 Send packet",
           wait $(wTime),
           write rs2.active false,
           write rs2.reset,
@@ -72,6 +76,7 @@ rateS2 :: Script(
 
           label loop_beg2,
           write rs2.active true,
+//          print "rs2 Send packet",
           wait $(wTime),
           write rs2.active false,
           write rs2.reset,
@@ -83,14 +88,14 @@ rateS2 :: Script(
           goto loop_beg2 $(lt $(c1.count) 75),
           );
 
-rateSD :: Script(
-          label loop_beg,
-          write rsd.active true,
-          wait .01,
-          write rsd.active false,,
-          write rsd.reset,
-          goto loop_beg
-          );
+// rateSD :: Script(
+//           label loop_beg,
+//           write rsd.active true,
+//           wait .01,
+//           write rsd.active false,,
+//           write rsd.reset,
+//           goto loop_beg
+//           );
 
 rateC :: Script(
          label loop_beg,
