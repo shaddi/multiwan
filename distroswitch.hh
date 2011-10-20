@@ -41,8 +41,12 @@ public:
   void push(int, Packet *);
   void set_distribution(unsigned int, const uint32_t[]);
 
+  uint32_t get_pkt_count(int);
+  void reset_pkt_count(int);
+
 private:
   uint32_t *_distrib;
+  uint32_t *_cpkt_line;
   int _total_ports;
   int _distrib_sum;
 

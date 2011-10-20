@@ -9,7 +9,7 @@ CLICK_DECLS
  */
 
 DistroSwitch::DistroSwitch()
-    : _distrib(0), _total_ports(0), _distrib_sum(0)
+    : _distrib(0), _cpkt_line(0), _total_ports(0), _distrib_sum(0)
 {
 }
 
@@ -28,8 +28,11 @@ DistroSwitch::initialize(ErrorHandler *)
 {
     _total_ports = noutputs();
     _distrib = new uint32_t[_total_ports];
-    for (int i = 0; i < _total_ports; i++)
+    _cpkt_line = new uint32_t[_total_ports];
+    for (int i = 0; i < _total_ports; i++) {
         _distrib[i] = 1;
+        _cpkt_line[i] = 0;
+    }
 
     _distrib_sum = _total_ports;
 
@@ -46,6 +49,7 @@ void
 DistroSwitch::cleanup(CleanupStage)
 {
     delete[] _distrib;
+    delete[] _cpkt_line;
 }
 
 void
@@ -66,7 +70,9 @@ DistroSwitch::push(int, Packet *p)
     // click_chatter("[DISTROSWITCH] Num:%d Distrib_Sum:%d Packet sent port %d\n",
     //               num, _distrib_sum, port);
 #endif
-    output(port).push(p);
+  _cpkt_line[port]++;
+
+  output(port).push(p);
 }
 
 void
@@ -90,6 +96,18 @@ DistroSwitch::set_distribution(unsigned int total, const uint32_t distrib[])
     for (int i = 0; i < _total_ports; i++)
         click_chatter("[DISTROSWITCH]  %d", _distrib[i]);
 #endif
+}
+
+uint32_t
+DistroSwitch::get_pkt_count(int line)
+{
+    return _cpkt_line[line];
+}
+
+void
+DistroSwitch::reset_pkt_count(int line)
+{
+    _cpkt_line[line] = 0;
 }
 
 int
