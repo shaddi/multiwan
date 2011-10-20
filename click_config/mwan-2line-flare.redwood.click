@@ -39,7 +39,7 @@ tun1 :: Null -> tun1_dev;
 // tun1 :: Null -> c1 :: Counter -> tun1_dev;
 
 // TODO: take Unqueue out
-host -> MarkIPHeader -> SEtTimestamp -> fs;
+host -> MarkIPHeader -> SetTimestamp -> fs;
 
 cld -> ph -> Discard;
 

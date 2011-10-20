@@ -8,7 +8,7 @@
 #include "flowagesplitter.hh"
 CLICK_DECLS
 
-#define CLICK_PROCESSMWANHEADER3_DEBUG
+//#define CLICK_PROCESSMWANHEADER3_DEBUG
 
 /*
   =c
