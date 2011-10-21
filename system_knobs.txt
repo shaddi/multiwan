@@ -1,0 +1,55 @@
+These are all the knobs in the system that can be messed with.
+
+<name> <current value>
+<where>
+<description>
+<things to consider when setting>
+
+#define FLOWAGESPLITTER_CLEANUP_INTERVAL 10 (seconds)
+- flowagesplitter.hh
+- How often FlowAgeSplitter will clean up it's list of current flows passing through it. For performance this has double duty of how old information on a flow can be before it is reaped.
+
+UPDATE_INT 100 (milliseconds)
+- ProcessMWanHeader* elements
+- The interval between updates of the FlareSwitch, assumed to be in milliseconds. More importantly this is the rate the distribution is updated based on the current congestion bitmap.
+- What is the RTT of the tunnel, or at least the one way latency. Also the packet rate, don't need to update when not many packets have passed, but do want to update if enough packets have gone to make a new bitmap or losing possibly useful congestion information. (2Mbps/8/1500)/10 > 8 packets every 100ms. This is one of the things that dictate how fast we react.
+
+DISTRIB_TOTAL 100
+- ProcessMWanHeader* elements
+- Total distribution that can be divided up among the different lines
+- The bigger this is the greater than granularity of allocation.
+
+DISTRIB_INC 1
+- ProcessMWanHeader* elements
+- When see a line is congested and want to move some of the distribution to another line, this is how much is moved.
+- Dictates how fast we react along with UPDATE_INT.
+
+DISTRIB_MIN 5
+- ProcessMWanHeader* elements
+- The absolute minimum distribution a line can have.
+- We need some traffic going down a line at any give time for the sake of exploring and measuring what it is doing. Kind of arbitrarily chosen but is important to think about! If too small then not enough traffic will go down this line to enable us to get a decent idea of the congestion at every UPDATE_INT. If too big might be putting more traffic on the line then we really should. 5 seemed to work pretty well for what we were doing.
+
+FLOWSPLIT_NUM 1
+- ProcessMWanHeader3 element
+- When the entire class is considered congested the number of flows to move to the higher latency class.
+- Once again this is just how fast we react to congestion. It is related though to what FLOWSPLIT_THRESHOLD is and how we calculate the congestion for the class.
+
+FLOWSPLIT_THRESHOLD 3
+- ProcessMWanHeader3 element
+- The threshold that the congestion of the class has to be or greater for us to move flows to a different class.
+- Effects how fast we react to congestion and is strongly coupled with how we calculate the class's congestion.
+
+Class's Congestion Calculation
+- ProcessMWanHeader3.cc
+- This is the rolling average of the average congestion of all the links in this update interval with an alpha of 0.5. This is also zeroed out when we do bump a flow(s) to another class. So lower the possibility of reacting to congestion we've already reacted to again.
+- We don't want to entirely depend on the congestion of the line just in that interval because we may be reacting to a momentary spike and the flows will be fine in the class. But we are really interested in the latest congestion measurement not most of the history, hence alpha = 0.5.
+
+CLICK_CALCCONGESTION_SENSITIVITY 2500 (microseconds)
+- calccongestiondelta.hh
+- How different the send and arrival interval has to be to consider the gap detected congestion.
+- Too small you get all sorts of "fake" congestion. On top of that there is getting the time from the click (sensitive to about 7000) and possible artifacts of dummynet. Might have been better to make this a little smaller thought....
+
+FLARESWITCH_TOKEN_RESET_DEFAULT_INT 500 (milliseconds)
+- flareswitch.hh
+- Bounds how long the token counters history is kept. Everything is set back to 0 ever interval. Default given from FLARE paper.
+- Not sure what the trade offs are, went with the FLARE paper's default and just left it at that.
