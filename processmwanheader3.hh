@@ -116,6 +116,7 @@ private:
     unsigned short _c_uniform_cong;
     uint32_t _c_cong_mask;
     unsigned short _mtbs;
+    unsigned short _avg_congestion; // Keep x100 more for significant digits
 
     void update_cong_scores();
     void update_distribution(); // update_cong_scores() needs to be called first.

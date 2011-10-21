@@ -23,9 +23,9 @@ c0_ph :: ProcessMWanHeader3(FLARESWITCH c0_fs, MAX_PAINT $c0_max_paint,
                        DISTRIB_TOTAL 100, // Total "points" giving to lines
                        DISTRIB_INC 1, // Points move b/t lines when redistribute
                        DISTRIB_MIN 5, // Smallest points a line can have
-                       FLOWAGESPLITTER fas // Splits between classes
+                       FLOWAGESPLITTER fas, // Splits between classes
                        // FLOWSPLIT_NUM , // Using default (1) for now
-                       // FLOWSPLIT_THRESHOLD // Using defualt (4 of 16)  for now
+                       FLOWSPLIT_THRESHOLD 3 // Using defualt (4 of 16)  for now
                        );
 
 c0_ccd0 :: CalcCongestionDelta(OFFSET $offset);
@@ -100,5 +100,12 @@ c1_tee1[1] -> c1_to_internet;
 // TODO: fix IPEncap
 c0_fs[0] -> c0_ah0 -> IPEncap(253, 192.168.25.2, 192.168.35.2) -> tun0;
 c0_fs[1] -> c0_ah1 -> IPEncap(253, 192.168.26.2, 192.168.36.2) -> tun1;
-c1_fs[0] -> c1_ah0 -> IPEncap(253, 192.168.25.2, 192.168.35.2) -> tun2;
-c1_fs[1] -> c1_ah1 -> IPEncap(253, 192.168.26.2, 192.168.36.2) -> tun3;
+c1_fs[0] -> c1_ah0 -> IPEncap(253, 192.168.27.2, 192.168.37.2) -> tun2;
+c1_fs[1] -> c1_ah1 -> IPEncap(253, 192.168.28.2, 192.168.38.2) -> tun3;
+
+s :: Script(
+     label loop_beg,
+     wait .25,
+     print "---------------------------------- FLOWAGESPLITTER: flow count" $(fas.get_flow_count),
+     goto loop_beg
+     );

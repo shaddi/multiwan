@@ -7,7 +7,7 @@
 #include <click/timer.hh>
 CLICK_DECLS
 
-#define CLICK_FLOWAGESPLITTER_DEBUG
+//#define CLICK_FLOWAGESPLITTER_DEBUG
 
 /*
   =c
@@ -30,7 +30,7 @@ CLICK_DECLS
 
 */
 
-#define FLOWAGESPLITTER_CLEANUP_INTERVAL 120 //In seconds
+#define FLOWAGESPLITTER_CLEANUP_INTERVAL 10 //In seconds
 
 class FlowAgeSplitter : public Element {
 public:
@@ -64,10 +64,12 @@ private:
     FlowDataNode *_tail;
     FlowDataNode *_curr_thresh_node;
     uint64_t _curr_thresh_order;
+    int *_c_flow;
 
     HashMap<uint32_t, FlowDataNode*> _hshFIdFDNode;
 
     static int static_bump_flows(const String&, Element*, void*, ErrorHandler*);
+    static String static_get_flow_count(Element*, void*);
 };
 
 CLICK_ENDDECLS

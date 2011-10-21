@@ -8,7 +8,7 @@ CLICK_DECLS
 
 FlowAgeSplitter::FlowAgeSplitter()
     : _timer(this), _head(0), _tail(0), _curr_thresh_node(0), _curr_thresh_order(0),
-      _hshFIdFDNode(0)
+      _c_flow(0),_hshFIdFDNode(0)
 {
 }
 
@@ -47,6 +47,10 @@ FlowAgeSplitter::initialize(ErrorHandler *)
     _curr_thresh_node = _tail;
     _curr_thresh_order = _tail->orderID;
 
+    _c_flow = new int[2];
+    for (int i = 0; i < 2; i++)
+        _c_flow[i] = 0;
+
     _hshFIdFDNode = HashMap<uint32_t, FlowDataNode*>();
 
     _timer.initialize(this);
@@ -59,6 +63,7 @@ void
 FlowAgeSplitter::add_handlers()
 {
     add_write_handler("bump_flows", static_bump_flows, 0);
+    add_read_handler("get_flow_count", static_get_flow_count, (void *) 0);
 }
 
 void
@@ -70,6 +75,8 @@ FlowAgeSplitter::cleanup(CleanupStage)
         delete curr;
         curr = tmp;
     }
+
+    delete[] _c_flow;
 }
 
 void
@@ -81,7 +88,7 @@ FlowAgeSplitter::push(int, Packet *p)
         fdNode->delete_me = false;
     } else {
 #ifdef CLICK_FLOWAGESPLITTER_DEBUG
-        click_chatter("New flow! %u", fID);
+        click_chatter("[FLOWAGESPLITTER] New flow! %u", fID);
 #endif
         fdNode = new FlowDataNode();
         fdNode->flowID = fID;
@@ -94,6 +101,8 @@ FlowAgeSplitter::push(int, Packet *p)
         fdNode->prev = _head;
         _head->next->prev = fdNode;
         _head->next = fdNode;
+
+        _c_flow[0]++;
     }
 
     if (fdNode->orderID > _curr_thresh_order)
@@ -109,6 +118,7 @@ FlowAgeSplitter::run_timer(Timer *timer)
 
 #ifdef CLICK_FLOWAGESPLITTER_DEBUG
     //    click_chatter("Timer! Time for cleaning.");
+    click_chatter("[FLOWAGESPLITTER] Flow counts: %d %d", _c_flow[0], _c_flow[1]);
 #endif
 
     _head->delete_me = false;
@@ -122,8 +132,13 @@ FlowAgeSplitter::run_timer(Timer *timer)
 
         if (curr->delete_me) { // reap node, haven't seen a new packet in a while.
 #ifdef CLICK_FLOWAGESPLITTER_DEBUG
-            //            click_chatter("Delete flow! %u", curr->flowID);
+            click_chatter("[FLOWAGESPLITTER] Delete flow! %u", curr->flowID);
 #endif
+            if (curr->orderID > _curr_thresh_order)
+                _c_flow[0]--;
+            else
+                _c_flow[1]--;
+
             curr->prev->next = curr->next;
             curr->next->prev = curr->prev;
             delete curr;
@@ -148,10 +163,13 @@ FlowAgeSplitter::bump_flows(unsigned int n)
     }
 
 #ifdef CLICK_FLOWAGESPLITTER_DEBUG
-    click_chatter("Told to bump %u flows, bump %u", n, i);
+    click_chatter("[FLOWAGESPLITTER] Told to bump %u flows, bump %u", n, i);
 #endif
 
     _curr_thresh_order = _curr_thresh_node->orderID;
+
+    _c_flow[0] -= i;
+    _c_flow[1] += i;
 }
 
 int
@@ -170,6 +188,16 @@ FlowAgeSplitter::static_bump_flows(const String &data, Element *element, void*,
     fas->bump_flows((unsigned int)n);
 
     return 0;
+}
+
+String
+FlowAgeSplitter::static_get_flow_count(Element *e, void*)
+{
+    char buffer[256];
+    sprintf(buffer, "%d %d", ((FlowAgeSplitter*)e)->_c_flow[0],
+            ((FlowAgeSplitter*)e)->_c_flow[1]);
+
+    return String(buffer);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(FlowAgeSplitter)

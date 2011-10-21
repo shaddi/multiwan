@@ -12,7 +12,7 @@ ProcessMWanHeader3::ProcessMWanHeader3()
       _cong_scores(0), _distrib(0), _distrib_total(100), _distrib_inc(5),
       _distrib_min(5), _flowsplit_num(FLOWSPLIT_NUM),
       _flowsplit_threshold(FLOWSPLIT_THRESHOLD), _c_uniform_cong(0),
-      _c_cong_mask(0), _mtbs(0)
+      _c_cong_mask(0), _mtbs(0), _avg_congestion(0)
 {
 }
 
@@ -364,11 +364,22 @@ ProcessMWanHeader3::bump_flows_if_need()
             bIsCongested = false;
     }
 
-    if (bIsCongested && (sum/_max_paint >= _flowsplit_threshold)) {
+    // _avg_congestion kept at x10^-2 for significant digits.
+    _avg_congestion = ((((sum*100)/_max_paint)*50)/100) +
+        ((_avg_congestion*50)/100);
+    //    _avg_congestion = ((sum*100)/_max_paint);
+
+#ifdef CLICK_PROCESSMWANHEADER3_DEBUG
+    click_chatter("[PROCESSMWANHEADER3] Avg Score %d Congestion %d",
+                  sum/_max_paint, _avg_congestion);
+#endif
+
+    if (bIsCongested && ((_avg_congestion/100) >= _flowsplit_threshold)) {
 #ifdef CLICK_PROCESSMWANHEADER3_DEBUG
         click_chatter("[PROCESSMWANHEADER3] Bumping %u flows.", _flowsplit_num);
 #endif
         _elem_fas->bump_flows(_flowsplit_num);
+        _avg_congestion = 0;
     }
 
 }
