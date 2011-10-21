@@ -70,10 +70,12 @@ tun2 :: Null -> tun2_dev;
 tun3 :: Null -> tun3_dev;
 
 // TODO: take Unqueue out
-host -> MarkIPHeader -> AggregateIPFlows -> fas;
+host -> MarkIPHeader -> aipf :: AggregateIPFlows -> fas;
 
 fas[0] -> MarkIPHeader -> SetTimestamp -> c0_fs;
 fas[1] -> MarkIPHeader -> SetTimestamp -> c1_fs;
+
+aipf[1] -> MarkIPHeader -> SetTimestamp -> c0_fs; //TODO:Mild hack, but just for now
 
 c0_cld -> c0_ph -> Discard;
 c1_cld -> c1_ph -> Discard;
@@ -103,9 +105,9 @@ c0_fs[1] -> c0_ah1 -> IPEncap(253, 192.168.36.2, 192.168.26.2) -> tun1;
 c1_fs[0] -> c1_ah0 -> IPEncap(253, 192.168.37.2, 192.168.27.2) -> tun2;
 c1_fs[1] -> c1_ah1 -> IPEncap(253, 192.168.38.2, 192.168.28.2) -> tun3;
 
-s :: Script(
-     label loop_beg,
-     wait .25,
-     print "---------------------------------- FLOWAGESPLITTER: flow count" $(fas.get_flow_count),
-     goto loop_beg
-     );
+// s :: Script(
+//      label loop_beg,
+//      wait .25,
+//      print "---------------------------------- FLOWAGESPLITTER: flow count" $(fas.get_flow_count),
+//      goto loop_beg
+//      );
