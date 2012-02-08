@@ -8,6 +8,7 @@ These are all the knobs in the system that can be messed with.
 #define FLOWAGESPLITTER_CLEANUP_INTERVAL 10 (seconds)
 - flowagesplitter.hh
 - How often FlowAgeSplitter will clean up it's list of current flows passing through it. For performance this has double duty of how old information on a flow can be before it is reaped.
+- This has the potential of marking an older flow as new, which means we are in accurate in which flow bump up to another class.
 
 UPDATE_INT 100 (milliseconds)
 - ProcessMWanHeader* elements
