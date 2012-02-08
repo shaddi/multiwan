@@ -72,6 +72,7 @@ FlareSwitch::add_handlers()
 {
     add_write_handler("set_distribution", static_set_distribution, 0);
     add_write_handler("set_mtbs", static_set_mtbs, 0);
+    add_read_handler("get_mtbs", static_get_mtbs, (void *) 0);
 }
 
 void
@@ -215,6 +216,12 @@ FlareSwitch::set_mtbs(unsigned int mtbs)
     _mtbs = mtbs;
 }
 
+unsigned int
+FlareSwitch::get_mtbs()
+{
+    return _mtbs;
+}
+
 void
 FlareSwitch::update_tokens(uint32_t length)
 {
@@ -296,6 +303,12 @@ FlareSwitch::static_set_mtbs(const String &data, Element *element, void*,
     fs->set_mtbs(tmp);
 
     return 0;
+}
+
+String
+FlareSwitch::static_get_mtbs(Element *e, void*)
+{
+    return String(((FlareSwitch*)e)->get_mtbs());
 }
 
 #define POLY 0x8408

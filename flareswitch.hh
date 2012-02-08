@@ -64,6 +64,7 @@ public:
 
     void set_distribution(unsigned int, const uint32_t[]);
     void set_mtbs(unsigned int);
+    unsigned int get_mtbs();
 
 private:
     enum {TCP = 6, UDP = 17};
@@ -99,6 +100,7 @@ private:
     static int static_set_distribution(const String&, Element*, void*,
                                        ErrorHandler*);
     static int static_set_mtbs(const String&, Element*, void*, ErrorHandler*);
+    static String static_get_mtbs(Element*, void*);
 
     static unsigned short crc16(char *data_p, unsigned short length);
 

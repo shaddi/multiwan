@@ -63,7 +63,7 @@ Debug script element comment me out when not needed:
 debug :: Script(
       label loop_beg,
       wait 1,
-      print $(now) " " $(cld.get_max_delta)
+      print $(now) " max_delta " $(cld.get_max_delta) " flare_mtbs " $(fs.get_mtbs)
 //      set a $(ccd0.get_congestion_score),
 //      set b $(ccd1.get_congestion_score),
 //      print "c0:" $(c0.count) "c1:" $(c1.count),// "ccd0:" $(a) "ccd1:" $(b),
