@@ -59,7 +59,7 @@ tee1[1] -> to_internet;
 fs[0] -> ah0 -> IPEncap(253, 192.168.35.2, 192.168.25.2) -> tun0;
 fs[1] -> ah1 -> IPEncap(253, 192.168.36.2, 192.168.26.2) -> tun1;
 
-Debug script element comment me out when not needed:
+//Debug script element comment me out when not needed:
 debug :: Script(
       label loop_beg,
       wait 1,
